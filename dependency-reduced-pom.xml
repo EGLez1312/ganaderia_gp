@@ -13,7 +13,7 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
-              <mainClass>App.MainTest</mainClass>
+              <mainClass>App.App</mainClass>
             </manifest>
           </archive>
         </configuration>
@@ -30,7 +30,7 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <mainClass>App.MainTest</mainClass>
+                  <mainClass>App.App</mainClass>
                 </transformer>
               </transformers>
             </configuration>
@@ -42,7 +42,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.target>21</maven.compiler.target>
-    <exec.mainClass>App.MainTest</exec.mainClass>
+    <exec.mainClass>App.App</exec.mainClass>
     <maven.compiler.source>21</maven.compiler.source>
   </properties>
 </project>

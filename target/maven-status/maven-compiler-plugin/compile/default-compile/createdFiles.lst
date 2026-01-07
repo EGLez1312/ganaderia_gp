@@ -1,4 +1,5 @@
 App\App.class
+DAO\UsuarioDAO.class
 Modelo\Usuario.class
 Util\HibernateUtil.class
 Util\PasswordEncoderUtil.class

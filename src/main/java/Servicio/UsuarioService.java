@@ -4,21 +4,21 @@
  */
 package Servicio;
 
-import Modelo.Usuario;
-import Util.PasswordEncoderUtil;
+import DAO.UsuarioDAO;
 import Util.HibernateUtil;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
+import Modelo.Usuario;
+import Util.PasswordEncoderUtil;
 
 /**
- * Servicio que gestiona las operaciones CRUD de usuarios con Hibernate.
- * Incluye registro, login y validación de credenciales encriptadas.
+ * Servicio de negocio para operaciones de usuarios.
+ * Maneja la lógica de registro, login y búsqueda, delegando persistencia al UsuarioDAO.
  * 
  * @author Elena González
  * @version 1.0
  */
 public class UsuarioService {
+    
     private final PasswordEncoderUtil passwordEncoder = new PasswordEncoderUtil();
 
     /**
@@ -34,28 +34,16 @@ public class UsuarioService {
      */
     public Usuario registrar(String username, String password, String email,
                              String nombre, String apellidos) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-
-            // Verificar si ya existe
-            Query<Usuario> query = session.createQuery("FROM Usuario WHERE username = :username", Usuario.class);
-            query.setParameter("username", username);
-            Usuario existente = query.uniqueResult();
-
-            if (existente != null) {
-                return null;  // Usuario ya existe
-            }
-
-            // Crear nuevo usuario
-            Usuario nuevo = new Usuario(username, passwordEncoder.encode(password), email, nombre, apellidos);
-            session.persist(nuevo);
-            tx.commit();
-
-            return nuevo;
-        } catch (Exception e) {
-            System.err.println("Error al registrar usuario: " + e.getMessage());
-            return null;
+        UsuarioDAO dao = new UsuarioDAO();
+        if (dao.findByUsername(username) != null) {
+            return null; // Usuario ya existe
         }
+
+        // Encriptar contraseña
+        String passHash = passwordEncoder.encode(password);
+        Usuario nuevo = new Usuario(username, passHash, email, nombre, apellidos);
+        dao.insert(nuevo);
+        return nuevo;
     }
 
     /**
@@ -66,36 +54,30 @@ public class UsuarioService {
      * @return Usuario autenticado o null si falla.
      */
     public Usuario login(String username, String password) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Query<Usuario> query = session.createQuery("FROM Usuario WHERE username = :username AND activo = true", Usuario.class);
-            query.setParameter("username", username);
-            Usuario usuario = query.uniqueResult();
-
-            if (usuario != null && passwordEncoder.matches(password, usuario.getPassword())) {
-                // Actualizar última conexión
-                usuario.setUltimaConexion(java.time.LocalDateTime.now());
-                session.beginTransaction();
-                session.merge(usuario);
-                session.getTransaction().commit();
-                return usuario;
-            }
-            return null;
-        } catch (Exception e) {
-            System.err.println("Error en login: " + e.getMessage());
-            return null;
+        UsuarioDAO dao = new UsuarioDAO();
+        Usuario usuario = dao.findByUsername(username);
+        
+        if (usuario != null && passwordEncoder.matches(password, usuario.getPassword())) {
+            // Actualizar última conexión
+            usuario.setUltimaConexion(java.time.LocalDateTime.now());
+            dao.update(usuario); 
+            return usuario;
         }
+        return null;
     }
 
     /**
      * Busca usuario por ID (para pantallas de perfil).
+     *
+     * @param id ID del usuario.
+     * @return Usuario encontrado o null si no existe.
      */
     public Usuario findById(Integer id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.get(Modelo.Usuario.class, id);
+            return session.get(Usuario.class, id);
         } catch (Exception e) {
             System.err.println("Error buscando usuario: " + e.getMessage());
             return null;
         }
     }
-        
 }

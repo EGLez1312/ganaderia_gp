@@ -4,102 +4,135 @@
  */
 package Vista;
 
-import Servicio.UsuarioService;
+import DAO.UsuarioDAO;
+import Modelo.Usuario;
+import Util.PasswordEncoderUtil;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 
 /**
- * Diálogo para recuperar contraseña (versión simplificada).
- * Busca usuario por email/username y permite cambiar contraseña.
+ * Ventana para recuperar contraseña vía email.
+ * Busca usuario y muestra datos para reset.
  * 
  * @author Elena González
  * @version 1.0
  */
-public class RecuperarPasswordFrame extends JDialog {
-
-    private final LoginFrame parent;
-    private final UsuarioService usuarioService = new UsuarioService();
-
-    private JTextField txtEmailOUsername;
-    private JPasswordField txtNuevaPassword;
-    private JPasswordField txtRepeatPassword;
+public class RecuperarPasswordFrame extends JFrame {
+    private LoginFrame parent;
+    private JTextField txtEmail;
+    private UsuarioDAO usuarioDAO;
+    private JLabel lblDatos;
 
     public RecuperarPasswordFrame(LoginFrame parent) {
-        super(parent, "Recuperar contraseña", true);
         this.parent = parent;
         initComponents();
-        pack();
-        setLocationRelativeTo(parent);
+        setLocationRelativeTo(null);
     }
 
     private void initComponents() {
-        setLayout(new BorderLayout(10, 10));
-
-        JLabel lblTitulo = new JLabel("Recuperar contraseña", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
-        lblTitulo.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        add(lblTitulo, BorderLayout.NORTH);
-
-        JPanel pnlForm = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
-        gbc.anchor = GridBagConstraints.WEST;
-
-        int fila = 0;
-
-        gbc.gridx = 0; gbc.gridy = fila++;
-        pnlForm.add(new JLabel("Email o Usuario:"), gbc);
-        gbc.gridx = 1;
-        txtEmailOUsername = new JTextField(15);
-        pnlForm.add(txtEmailOUsername, gbc);
-
-        gbc.gridx = 0; gbc.gridy = fila++;
-        pnlForm.add(new JLabel("Nueva contraseña:"), gbc);
-        gbc.gridx = 1;
-        txtNuevaPassword = new JPasswordField(15);
-        pnlForm.add(txtNuevaPassword, gbc);
-
-        gbc.gridx = 0; gbc.gridy = fila++;
-        pnlForm.add(new JLabel("Repetir nueva contraseña:"), gbc);
-        gbc.gridx = 1;
-        txtRepeatPassword = new JPasswordField(15);
-        pnlForm.add(txtRepeatPassword, gbc);
-
-        gbc.gridx = 0; gbc.gridy = fila++; gbc.gridwidth = 2;
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setTitle("Recuperar Contraseña - Ganadería GP");
+        setSize(400, 300);
+        setLayout(new GridBagLayout());
+        
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(12, 12, 12, 12);
+        c.anchor = GridBagConstraints.WEST;
+        
+        // Instrucciones
+        c.gridx = 0; c.gridy = 0; c.gridwidth = 2;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        JLabel lblIntro = new JLabel("Introduce tu email:");
+        lblIntro.setFont(new Font("Arial", Font.BOLD, 14));
+        add(lblIntro, c);
+        
+        // Email
+        c.gridwidth = 1;
+        c.gridy = 1;
+        c.gridx = 0;
+        add(new JLabel("Email:"), c);
+        c.gridx = 1;
+        txtEmail = new JTextField(20);
+        txtEmail.setToolTipText("Email registrado en el sistema");
+        add(txtEmail, c);
+        
+        // Resultado
+        c.gridx = 0; c.gridy = 2; c.gridwidth = 2;
+        lblDatos = new JLabel(" ", JLabel.CENTER);
+        lblDatos.setBorder(BorderFactory.createTitledBorder("Datos recuperados"));
+        lblDatos.setPreferredSize(new Dimension(350, 80));
+        add(lblDatos, c);
+        
+        // Botones
+        c.gridy = 3; c.fill = GridBagConstraints.HORIZONTAL;
         JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnCambiar = new JButton("Cambiar contraseña");
-        getRootPane().setDefaultButton(btnCambiar);
-        JButton btnCancelar = new JButton("Cancelar");
-
-        pnlBotones.add(btnCancelar);
-        pnlBotones.add(btnCambiar);
-        pnlForm.add(pnlBotones, gbc);
-
-        add(pnlForm, BorderLayout.CENTER);
-
-        btnCambiar.addActionListener(e -> cambiarPassword());
-        btnCancelar.addActionListener(e -> dispose());
+        
+        JButton btnRecuperar = new JButton("RECUPERAR");
+        btnRecuperar.setMnemonic('R');
+        getRootPane().setDefaultButton(btnRecuperar);
+        btnRecuperar.addActionListener(e -> recuperarPassword());
+        
+        JButton btnVolver = new JButton("Volver al Login");
+        btnVolver.setMnemonic('V');
+        btnVolver.addActionListener(e -> dispose());
+        
+        pnlBotones.add(btnVolver);
+        pnlBotones.add(btnRecuperar);
+        add(pnlBotones, c);
     }
 
-    private void cambiarPassword() {
-        String identificador = txtEmailOUsername.getText().trim();
-        String nuevaPass = new String(txtNuevaPassword.getPassword()).trim();
-        String repeatPass = new String(txtRepeatPassword.getPassword()).trim();
-
-        if (identificador.isEmpty() || nuevaPass.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios", "Error", JOptionPane.ERROR_MESSAGE);
+    private void recuperarPassword() {
+        String email = txtEmail.getText().trim();
+        if (email.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Introduce tu email", "Error", JOptionPane.ERROR_MESSAGE);
+            txtEmail.requestFocus();
             return;
         }
 
-        if (!nuevaPass.equals(repeatPass)) {
-            JOptionPane.showMessageDialog(this, "Las contraseñas no coinciden", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        try {
+            usuarioDAO = new UsuarioDAO();
+            Usuario usuario = usuarioDAO.findByEmail(email);
 
-        // TODO: Implementar lógica real de cambio de contraseña
-        JOptionPane.showMessageDialog(this, "Funcionalidad de recuperación de contraseña implementada.\n"
-                + "En producción se enviaría un email con enlace de reset.", 
-                "Info", JOptionPane.INFORMATION_MESSAGE);
-        dispose();
+            if (usuario != null) {
+                String passTemporal = new PasswordEncoderUtil().encode("admin123");
+                usuario.setPassword(passTemporal);
+
+                usuarioDAO.update(usuario);
+                
+                String datos = String.format(
+                    "<html><b>Usuario:</b> %s<br>" +
+                    "<b>Nombre:</b> %s %s<br>" +
+                    "<b>Última conexión:</b> %s<br>" +
+                    "<i>Nueva contraseña temporal: admin123</i></html>",
+                    usuario.getUsername(),
+                    usuario.getNombre(),
+                    usuario.getApellidos(),
+                    usuario.getUltimaConexion() != null ? 
+                        usuario.getUltimaConexion().toString() : "Nunca"
+                );
+                lblDatos.setText(datos);
+                
+                JOptionPane.showMessageDialog(this, 
+                    "¡Datos recuperados! Usa contraseña temporal.", 
+                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                
+                // Rellenar login
+                parent.getTxtUsername().setText(usuario.getUsername());
+                parent.getTxtPassword().requestFocus();
+                
+            } else {
+                lblDatos.setText("<html><center>No se encontró usuario con ese email</center></html>");
+                JOptionPane.showMessageDialog(this, 
+                    "Email no registrado", "No encontrado", JOptionPane.WARNING_MESSAGE);
+            }
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public static void main(String[] args) {
+        new RecuperarPasswordFrame(null).setVisible(true);
     }
 }

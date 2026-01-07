@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * @version 1.0
  */
 @Entity
-@Table(name = "usuarios")
+@Table(name = "usuario")
 public class Usuario {
 
     @Id
@@ -40,7 +40,8 @@ public class Usuario {
     @Column(name = "ultima_conexion")
     private LocalDateTime ultimaConexion;
 
-    private Boolean activo = true;
+    @Column(name = "activo")
+    private boolean activo = true;
 
     // Constructores
     public Usuario() {}
@@ -78,6 +79,6 @@ public class Usuario {
     public LocalDateTime getUltimaConexion() { return ultimaConexion; }
     public void setUltimaConexion(LocalDateTime ultimaConexion) { this.ultimaConexion = ultimaConexion; }
 
-    public Boolean getActivo() { return activo; }
-    public void setActivo(Boolean activo) { this.activo = activo; }
+    public boolean isActivo() { return activo; }
+    public void setActivo(boolean activo) { this.activo = activo; }
 }

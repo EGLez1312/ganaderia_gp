@@ -30,6 +30,10 @@ public class LoginFrame extends JFrame {
     private JButton btnAcceso;
     private JButton btnRegistro;
     private JButton btnRecuperar;
+    
+    // Gestión de ventanas hijas (SOLUCIONA DUPLICADOS)
+    private RegistroFrame registroFrame;
+    private RecuperarPasswordFrame recuperarFrame;
 
     /**
      * Constructor que inicializa la ventana de login.
@@ -50,7 +54,7 @@ public class LoginFrame extends JFrame {
         setLayout(new BorderLayout(20, 20));
 
         // Panel título
-        JLabel lblTitulo = new JLabel("Gestión de Rebaño Ovinos", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("Gestión de Rebaños Ovinos", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 24));
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         add(lblTitulo, BorderLayout.NORTH);
@@ -130,10 +134,10 @@ public class LoginFrame extends JFrame {
         });
 
         // Botón Registro
-        btnRegistro.addActionListener(e -> mostrarRegistro());
+        btnRegistro.addActionListener(e -> abrirRegistro());
 
         // Botón Recuperar contraseña
-        btnRecuperar.addActionListener(e -> mostrarRecuperarPassword());
+        btnRecuperar.addActionListener(e -> abrirRecuperarPassword());
     }
 
     /**
@@ -162,17 +166,27 @@ public class LoginFrame extends JFrame {
     }
 
     /**
-     * Abre ventana de registro.
+     * Abre RegistroFrame (máximo 1 instancia).
      */
-    private void mostrarRegistro() {
-        new RegistroFrame(this).setVisible(true);
+    private void abrirRegistro() {
+        if (registroFrame == null || !registroFrame.isVisible()) {
+            registroFrame = new RegistroFrame(this);
+            registroFrame.setVisible(true);
+        } else {
+            registroFrame.toFront();
+        }
     }
 
     /**
-     * Abre ventana de recuperación de contraseña.
+     * Abre RecuperarPasswordFrame (máximo 1 instancia).
      */
-    private void mostrarRecuperarPassword() {
-        new RecuperarPasswordFrame(this).setVisible(true);
+    private void abrirRecuperarPassword() {
+        if (recuperarFrame == null || !recuperarFrame.isVisible()) {
+            recuperarFrame = new RecuperarPasswordFrame(this);
+            recuperarFrame.setVisible(true);
+        } else {
+            recuperarFrame.toFront();
+        }
     }
 
     /**

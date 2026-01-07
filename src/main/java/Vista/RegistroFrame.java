@@ -4,169 +4,181 @@
  */
 package Vista;
 
+import DAO.UsuarioDAO;
 import Modelo.Usuario;
-import Servicio.UsuarioService;
-
+import Util.PasswordEncoderUtil;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Ventana de registro de nuevos usuarios.
- * Valida campos y gestiona errores como usuario duplicado o campos vacíos.
+ * Valida campos, comprueba duplicados y encripta contraseñas.
  * 
  * @author Elena González
  * @version 1.0
  */
-public class RegistroFrame extends JDialog {
+public class RegistroFrame extends JFrame {
+    private LoginFrame parent;  // Referencia al login para comunicación
+    private JTextField txtUsername, txtEmail, txtNombre, txtApellidos;
+    private JPasswordField txtPassword, txtRepeatPassword;
+    private UsuarioDAO usuarioDAO;
+    private PasswordEncoderUtil encoder;
 
-    private final LoginFrame parent;
-    private final UsuarioService usuarioService = new UsuarioService();
-
-    // Componentes
-    private JTextField txtUsername;
-    private JPasswordField txtPassword;
-    private JPasswordField txtRepeatPassword;
-    private JTextField txtEmail;
-    private JTextField txtNombre;
-    private JTextField txtApellidos;
-
-    /**
-     * Constructor del diálogo de registro.
-     *
-     * @param parent Ventana padre (LoginFrame).
-     */
     public RegistroFrame(LoginFrame parent) {
-        super(parent, "Registro de nuevo usuario", true);
         this.parent = parent;
         initComponents();
-        pack();
-        setLocationRelativeTo(parent);
+        setLocationRelativeTo(null);
     }
 
     private void initComponents() {
-        setLayout(new BorderLayout(10, 10));
-
-        // Título
-        JLabel lblTitulo = new JLabel("Crear cuenta nueva", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
-        lblTitulo.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        add(lblTitulo, BorderLayout.NORTH);
-
-        // Formulario
-        JPanel pnlForm = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
-        gbc.anchor = GridBagConstraints.WEST;
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setTitle("Registro - Ganadería GP");
+        setSize(450, 450);
+        setLayout(new GridBagLayout());
+        
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(10, 10, 10, 10);
+        c.anchor = GridBagConstraints.WEST;
 
         int fila = 0;
-
+        
         // Username
-        gbc.gridx = 0; gbc.gridy = fila++;
-        pnlForm.add(new JLabel("Usuario *:"), gbc);
-        gbc.gridx = 1;
-        txtUsername = new JTextField(15);
-        txtUsername.setToolTipText("Nombre de usuario único (sin espacios)");
-        pnlForm.add(txtUsername, gbc);
-
-        // Password
-        gbc.gridx = 0; gbc.gridy = fila++;
-        pnlForm.add(new JLabel("Contraseña *:"), gbc);
-        gbc.gridx = 1;
-        txtPassword = new JPasswordField(15);
-        txtPassword.setToolTipText("Contraseña segura (mínimo 6 caracteres)");
-        pnlForm.add(txtPassword, gbc);
-
-        // Repetir password
-        gbc.gridx = 0; gbc.gridy = fila++;
-        pnlForm.add(new JLabel("Repetir contraseña *:"), gbc);
-        gbc.gridx = 1;
-        txtRepeatPassword = new JPasswordField(15);
-        pnlForm.add(txtRepeatPassword, gbc);
-
+        c.gridx = 0; c.gridy = fila++;
+        add(new JLabel("Username *:"), c);
+        c.gridx = 1;
+        txtUsername = new JTextField(20);
+        txtUsername.setToolTipText("Nombre único sin espacios");
+        add(txtUsername, c);
+        
         // Email
-        gbc.gridx = 0; gbc.gridy = fila++;
-        pnlForm.add(new JLabel("Email *:"), gbc);
-        gbc.gridx = 1;
-        txtEmail = new JTextField(15);
-        txtEmail.setToolTipText("Email para recuperación de contraseña");
-        pnlForm.add(txtEmail, gbc);
-
+        c.gridx = 0; c.gridy = fila++;
+        add(new JLabel("Email *:"), c);
+        c.gridx = 1;
+        txtEmail = new JTextField(20);
+        txtEmail.setToolTipText("Para recuperación de contraseña");
+        add(txtEmail, c);
+        
         // Nombre
-        gbc.gridx = 0; gbc.gridy = fila++;
-        pnlForm.add(new JLabel("Nombre:"), gbc);
-        gbc.gridx = 1;
-        txtNombre = new JTextField(15);
-        pnlForm.add(txtNombre, gbc);
+        c.gridx = 0;
+        c.gridy = fila++;
+        add(new JLabel("Nombre:"), c);
+        c.gridx = 1;
+        txtNombre = new JTextField(20);
+        add(txtNombre, c);
 
         // Apellidos
-        gbc.gridx = 0; gbc.gridy = fila++;
-        pnlForm.add(new JLabel("Apellidos:"), gbc);
-        gbc.gridx = 1;
-        txtApellidos = new JTextField(15);
-        pnlForm.add(txtApellidos, gbc);
+        c.gridx = 0;
+        c.gridy = fila++;
+        add(new JLabel("Apellidos:"), c);
+        c.gridx = 1;
+        txtApellidos = new JTextField(20);
+        add(txtApellidos, c);
 
+        // Password
+        c.gridx = 0; c.gridy = fila++;
+        add(new JLabel("Contraseña *:"), c);
+        c.gridx = 1;
+        txtPassword = new JPasswordField(20);
+        txtPassword.setToolTipText("Mínimo 6 caracteres");
+        add(txtPassword, c);
+        
+        // Repeat Password
+        c.gridx = 0; c.gridy = fila++;
+        add(new JLabel("Repetir *:"), c);
+        c.gridx = 1;
+        txtRepeatPassword = new JPasswordField(20);
+        add(txtRepeatPassword, c);
+        
         // Botones
-        gbc.gridx = 0; gbc.gridy = fila++; gbc.gridwidth = 2;
+        c.gridx = 0; c.gridy = fila; c.gridwidth = 2;
+        c.fill = GridBagConstraints.HORIZONTAL;
         JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnGuardar = new JButton("Crear usuario");
-        btnGuardar.setMnemonic('C');
-        getRootPane().setDefaultButton(btnGuardar);  // Enter = Guardar
+
+        JButton btnRegistrar = new JButton("REGISTRAR");
+        btnRegistrar.setMnemonic('R');
+        getRootPane().setDefaultButton(btnRegistrar);  // Enter = Registrar
+        btnRegistrar.addActionListener(e -> guardarUsuario());
 
         JButton btnCancelar = new JButton("Cancelar");
-        btnCancelar.setMnemonic('A');
-
-        pnlBotones.add(btnCancelar);
-        pnlBotones.add(btnGuardar);
-        pnlForm.add(pnlBotones, gbc);
-
-        add(pnlForm, BorderLayout.CENTER);
-
-        // Listeners
-        btnGuardar.addActionListener(e -> guardarUsuario());
+        btnCancelar.setMnemonic('C');
         btnCancelar.addActionListener(e -> dispose());
 
-        // Enter en campos ejecuta guardar
-        txtApellidos.addActionListener(e -> btnGuardar.doClick());
+        pnlBotones.add(btnRegistrar);
+        pnlBotones.add(btnCancelar);
+
+        add(pnlBotones, c);
     }
 
+    /**
+     * Valida y guarda nuevo usuario en BD.
+     */
     private void guardarUsuario() {
         String username = txtUsername.getText().trim();
-        String password = new String(txtPassword.getPassword()).trim();
-        String repeatPassword = new String(txtRepeatPassword.getPassword()).trim();
         String email = txtEmail.getText().trim();
         String nombre = txtNombre.getText().trim();
         String apellidos = txtApellidos.getText().trim();
+        String password = new String(txtPassword.getPassword()).trim();
+        String repeatPassword = new String(txtRepeatPassword.getPassword()).trim();
 
         // Validaciones
-        if (username.isEmpty() || password.isEmpty() || email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Usuario, contraseña y email son obligatorios", "Error", JOptionPane.ERROR_MESSAGE);
+        if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Username, email y contraseña obligatorios", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
         if (!password.equals(repeatPassword)) {
             JOptionPane.showMessageDialog(this, "Las contraseñas no coinciden", "Error", JOptionPane.ERROR_MESSAGE);
-            txtPassword.setText("");
-            txtRepeatPassword.setText("");
             txtPassword.requestFocus();
             return;
         }
-
         if (password.length() < 6) {
-            JOptionPane.showMessageDialog(this, "La contraseña debe tener al menos 6 caracteres", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Mínimo 6 caracteres", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Intentar registrar
-        Usuario nuevo = usuarioService.registrar(username, password, email, nombre, apellidos);
-        if (nuevo != null) {
-            JOptionPane.showMessageDialog(this, "¡Usuario creado correctamente!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            parent.getTxtUsername().setText(username);  // Pone el username en el login
-            parent.getTxtPassword().requestFocus();     // Foco en contraseña del login
-            dispose();
-        } else {
-            JOptionPane.showMessageDialog(this, "El usuario '" + username + "' ya existe", "Error", JOptionPane.ERROR_MESSAGE);
-            txtUsername.setText("");
-            txtUsername.requestFocus();
+        try {
+            usuarioDAO = new UsuarioDAO();
+            encoder = new PasswordEncoderUtil();
+
+            // Comprobar duplicado
+            if (usuarioDAO.findByUsername(username) != null) {
+                JOptionPane.showMessageDialog(this, "Username ya existe", "Error", JOptionPane.ERROR_MESSAGE);
+                txtUsername.requestFocus();
+                return;
+            }
+
+            // Crear usuario
+            Usuario nuevo = new Usuario();
+            nuevo.setUsername(username);
+            nuevo.setEmail(email);
+            nuevo.setNombre(nombre);      // ← NUEVO
+            nuevo.setApellidos(apellidos); // ← NUEVO
+            nuevo.setPassword(encoder.encode(password));
+            nuevo.setActivo(true);
+
+            usuarioDAO.insert(nuevo);
+            
+            JOptionPane.showMessageDialog(this, "¡Usuario registrado!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            
+            // Rellenar login padre
+            parent.getTxtUsername().setText(username);
+            parent.getTxtPassword().requestFocus();
+            
+            dispose(); // Cerrar registro
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error BD: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+ 
+    // Getters para LoginFrame
+    public LoginFrame getParent() {
+        return parent;
+    }
+
+
+    public static void main(String[] args) {
+        new RegistroFrame(null).setVisible(true);
     }
 }

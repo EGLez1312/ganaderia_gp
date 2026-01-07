@@ -16,7 +16,7 @@ import java.time.LocalDate;
  * @version 1.0
  */
 @Entity
-@Table(name = "ovejas")
+@Table(name = "oveja")
 public class Oveja {
 
     @Id
