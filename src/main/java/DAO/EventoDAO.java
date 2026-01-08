@@ -58,7 +58,7 @@ public class EventoDAO {
      */
     public List<Evento> listarTodos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("from Evento", Evento.class).list();
+            return session.createQuery("FROM Evento WHERE activo = true", Evento.class).list();
         }
     }
 
@@ -83,17 +83,15 @@ public class EventoDAO {
      * @param id ID del evento a eliminar.
      */
     public void eliminar(int id) {
-        Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            tx = session.beginTransaction();
+            Transaction tx = session.beginTransaction();
             Evento evento = session.get(Evento.class, id);
             if (evento != null) {
-                session.remove(evento);
+                // CAMBIO: No usamos session.remove(), usamos el borrado lógico
+                evento.setActivo(false);
+                session.merge(evento);
+                tx.commit();
             }
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
         }
     }
 }

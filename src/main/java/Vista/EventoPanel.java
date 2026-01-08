@@ -14,6 +14,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
+import com.toedter.calendar.JDateChooser;
 
 import java.time.LocalDate;
 
@@ -48,8 +49,10 @@ public class EventoPanel extends JPanel {
     /** Combo tipos de evento (Parto, Vacunación, etc.) */
     private JComboBox<String> cmbTipo;
     
-    /** Campo fecha en formato yyyy-MM-dd */
-    private JTextField txtFecha, txtObservaciones;
+    /** Selector de fecha del evento */
+    private com.toedter.calendar.JDateChooser jdFecha;
+    
+    private JTextField txtObservaciones, txtBuscarOveja; 
 
     /**
      * Constructor principal del panel de eventos.
@@ -62,6 +65,22 @@ public class EventoPanel extends JPanel {
         initComponents();
         cargarOvejasCombo();
         cargarEventos();
+
+        this.addAncestorListener(new javax.swing.event.AncestorListener() {
+            @Override
+            public void ancestorAdded(javax.swing.event.AncestorEvent event) {
+                // Este código se ejecuta cada vez que el usuario hace clic en la pestaña "Eventos"
+                cargarOvejasCombo();
+            }
+
+            @Override
+            public void ancestorRemoved(javax.swing.event.AncestorEvent event) {
+            }
+
+            @Override
+            public void ancestorMoved(javax.swing.event.AncestorEvent event) {
+            }
+        });
     }
 
     /**
@@ -96,12 +115,33 @@ public class EventoPanel extends JPanel {
         
         JButton btnRecargar = new JButton("🔄 Recargar");
         btnRecargar.setMnemonic('R');
-        btnRecargar.addActionListener(e -> cargarEventos());
+        btnRecargar.addActionListener(e -> {
+            cargarEventos();      // Refresca la tabla
+            cargarOvejasCombo(); // Refresca el desplegable
+        });
+
+        JTextField txtBuscarOveja = new JTextField(5);
+        txtBuscarOveja.setToolTipText("Escribe parte del crotal para filtrar");
+        txtBuscarOveja.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                String texto = txtBuscarOveja.getText().toLowerCase();
+                for (int i = 0; i < cmbOveja.getItemCount(); i++) {
+                    if (cmbOveja.getItemAt(i).toLowerCase().contains(texto)) {
+                        cmbOveja.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+        });
+        
         
         pnlBotones.add(btnNuevo);
         pnlBotones.add(btnGuardar);
         pnlBotones.add(btnEliminar);
         pnlBotones.add(btnRecargar);
+        pnlBotones.add(new JLabel("Buscar/Oveja:"));
+        pnlBotones.add(txtBuscarOveja, BorderLayout.EAST);
         add(pnlBotones, BorderLayout.NORTH);
 
         // Tabla
@@ -133,12 +173,14 @@ public class EventoPanel extends JPanel {
         pnlForm.add(cmbTipo, c);
         
         // Fecha
-        c.gridx = 0; c.gridy = 2;
-        pnlForm.add(new JLabel("Fecha (yyyy-MM-dd):"), c);
+        c.gridx = 0;
+        c.gridy = 2;
+        pnlForm.add(new JLabel("Fecha:"), c);
         c.gridx = 1;
-        txtFecha = new JTextField("2026-01-07", 12);
-        txtFecha.setToolTipText("Formato: 2026-01-07");
-        pnlForm.add(txtFecha, c);
+        jdFecha = new com.toedter.calendar.JDateChooser();
+        jdFecha.setDateFormatString("yyyy-MM-dd");
+        jdFecha.setPreferredSize(new Dimension(150, 25));
+        pnlForm.add(jdFecha, c);
         
         // Observaciones
         c.gridx = 0; c.gridy = 3;
@@ -158,9 +200,13 @@ public class EventoPanel extends JPanel {
      */
     private void cargarOvejasCombo() {
         try {
-            ovejaDAO = new OvejaDAO();
+            if (ovejaDAO == null) {
+                ovejaDAO = new OvejaDAO();
+            }
+
             cmbOveja.removeAllItems();
-            List<Oveja> ovejas = ovejaDAO.listarTodas();
+            List<Oveja> ovejas = ovejaDAO.listarTodas(); 
+
             for (Oveja o : ovejas) {
                 cmbOveja.addItem(o.getNumeroIdentificacion() + " - " + o.getRaza());
             }
@@ -200,7 +246,7 @@ public class EventoPanel extends JPanel {
     private void nuevoEvento() {
         cmbOveja.setSelectedIndex(0);
         cmbTipo.setSelectedIndex(0);
-        txtFecha.setText(LocalDate.now().toString());
+        jdFecha.setDate(new java.util.Date());
         txtObservaciones.setText("");
         cmbOveja.requestFocus();
     }
@@ -216,13 +262,21 @@ public class EventoPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Selecciona oveja");
                 return;
             }
+            if (cmbOveja.getItemCount() == 0) {
+                JOptionPane.showMessageDialog(this, "No hay ovejas activas para registrar eventos.");
+                return;
+            }
             
             Evento evento = new Evento();
             // Extrae número de oveja del formato "NUMERO - RAZA"
             String ovejaTexto = cmbOveja.getSelectedItem().toString().split(" - ")[0];
             evento.setOveja(ovejaDAO.buscarPorNumero(ovejaTexto));
             evento.setTipoEvento((String) cmbTipo.getSelectedItem());
-            evento.setFechaEvento(LocalDate.parse(txtFecha.getText()));
+            
+            java.util.Date date = jdFecha.getDate();
+            LocalDate localDate = date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            evento.setFechaEvento(localDate);
+            
             evento.setObservaciones(txtObservaciones.getText());
             
             eventoDAO = new EventoDAO();
