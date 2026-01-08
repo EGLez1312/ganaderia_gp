@@ -18,4 +18,4 @@ public class App {
             new LoginFrame().setVisible(true);
         });
     }
-}
+}   

@@ -51,6 +51,13 @@
             <version>1.2</version>
         </dependency>
         
+        <!-- Dependencia para tener la librería JCalendar -->
+        <dependency>
+            <groupId>com.toedter</groupId>
+            <artifactId>jcalendar</artifactId>
+            <version>1.4</version>
+        </dependency>
+        
     </dependencies>
 
     <build>

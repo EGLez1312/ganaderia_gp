@@ -8,6 +8,7 @@ import org.hibernate.Session;
 import Modelo.Usuario;
 import Util.HibernateUtil;
 import org.hibernate.Transaction;
+import Util.PasswordEncoderUtil;
 
 /**
  * DAO para operaciones CRUD de usuarios con Hibernate, utilizando HibernateUtil para la gestión de sesiones.
@@ -84,6 +85,36 @@ public class UsuarioDAO {
             e.printStackTrace();
             return null;
         }
+    }
+   
+    /**
+     * Busca un usuario por su ID primario. Utiliza session.get() para carga
+     * directa por clave primaria (más eficiente que queries).
+     *
+     * @param id identificador único del usuario (clave primaria)
+     * @return usuario encontrado o null si no existe
+     */
+    public Usuario findById(Integer id) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(Usuario.class, id);
+        } catch (Exception e) {
+            // Considera usar un Logger profesional en vez de System.err
+            return null;
+        }
+    }
+    
+    /**
+     * Valida login: username + password + activo=1
+     */
+    public Usuario login(String username, String rawPassword) {
+        Usuario usuario = findByUsername(username);
+        if (usuario != null) {
+            PasswordEncoderUtil encoder = new PasswordEncoderUtil();  // ← Instancia local
+            if (encoder.matches(rawPassword, usuario.getPassword())) {
+                return usuario;
+            }
+        }
+        return null;
     }
 
 }

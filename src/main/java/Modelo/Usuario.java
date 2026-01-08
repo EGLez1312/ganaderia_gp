@@ -41,7 +41,7 @@ public class Usuario {
     private LocalDateTime ultimaConexion;
 
     @Column(name = "activo")
-    private boolean activo = true;
+    private boolean activo = true;  
 
     // Constructores
     public Usuario() {}

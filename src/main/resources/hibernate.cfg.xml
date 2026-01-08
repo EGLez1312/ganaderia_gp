@@ -9,9 +9,10 @@
         <property name="hibernate.connection.url">jdbc:mysql://localhost:3308/ganaderia_gp?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=UTC</property>
         <property name="hibernate.connection.username">root</property>
         <property name="hibernate.connection.password">rebanio123</property>
+        <property name="hibernate.connection.isolation">2</property>
 
         <!-- Dialecto -->
-        <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQL8Dialect</property>
 
         <!-- Mostrar SQL -->
         <property name="hibernate.show_sql">true</property>

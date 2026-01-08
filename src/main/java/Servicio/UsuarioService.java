@@ -12,53 +12,72 @@ import Util.PasswordEncoderUtil;
 
 /**
  * Servicio de negocio para operaciones de usuarios.
- * Maneja la lógica de registro, login y búsqueda, delegando persistencia al UsuarioDAO.
+ * Implementa inyección de dependencias con patrón Factory/Builder para DAOs.
+ * Separa completamente lógica de negocio de persistencia.
  * 
  * @author Elena González
  * @version 1.0
  */
 public class UsuarioService {
     
-    private final PasswordEncoderUtil passwordEncoder = new PasswordEncoderUtil();
+    /** DAO para operaciones de persistencia de usuarios */
+    private final UsuarioDAO dao;
+    
+    /** Utilidad para codificación/verificación de contraseñas */
+    private final PasswordEncoderUtil passwordEncoder;
 
     /**
-     * Registra un nuevo usuario en la base de datos.
-     * Encripta la contraseña y valida que el username no exista.
-     *
-     * @param username Nombre de usuario único.
-     * @param password Contraseña en texto plano.
-     * @param email Email del usuario.
-     * @param nombre Nombre real.
-     * @param apellidos Apellidos.
-     * @return El usuario creado o null si ya existía el username.
+     * Constructor con inyección de dependencias.
+     * Permite testing y configuración externa de DAOs/encoders.
+     * 
+     * @param dao DAO para operaciones CRUD de usuarios
+     * @param passwordEncoder utilidad para hash de contraseñas BCrypt
+     */
+    public UsuarioService(UsuarioDAO dao, PasswordEncoderUtil passwordEncoder) {
+        this.dao = dao;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    /**
+     * Registra un nuevo usuario en el sistema.
+     * Valida unicidad de username y encripta contraseña antes de persistir.
+     * 
+     * @param username nombre de usuario único
+     * @param password contraseña en texto plano
+     * @param email dirección de correo electrónico
+     * @param nombre nombre real del usuario
+     * @param apellidos apellidos del usuario
+     * @return usuario creado o null si username ya existe
      */
     public Usuario registrar(String username, String password, String email,
                              String nombre, String apellidos) {
-        UsuarioDAO dao = new UsuarioDAO();
+        // Validación de unicidad delegada al DAO
         if (dao.findByUsername(username) != null) {
-            return null; // Usuario ya existe
+            return null; 
         }
 
-        // Encriptar contraseña
+        // Encriptación segura de contraseña
         String passHash = passwordEncoder.encode(password);
         Usuario nuevo = new Usuario(username, passHash, email, nombre, apellidos);
+        
         dao.insert(nuevo);
         return nuevo;
     }
 
     /**
-     * Valida las credenciales de login.
-     *
-     * @param username Nombre de usuario.
-     * @param password Contraseña en texto plano.
-     * @return Usuario autenticado o null si falla.
+     * Autentica usuario y actualiza última conexión.
+     * Verifica credenciales y actualiza timestamp de actividad.
+     * 
+     * @param username nombre de usuario
+     * @param password contraseña en texto plano
+     * @return usuario autenticado o null si falla
      */
     public Usuario login(String username, String password) {
-        UsuarioDAO dao = new UsuarioDAO();
+        // Buscar usuario activo
         Usuario usuario = dao.findByUsername(username);
         
+        // Verificar credenciales + actualizar actividad
         if (usuario != null && passwordEncoder.matches(password, usuario.getPassword())) {
-            // Actualizar última conexión
             usuario.setUltimaConexion(java.time.LocalDateTime.now());
             dao.update(usuario); 
             return usuario;
@@ -67,17 +86,14 @@ public class UsuarioService {
     }
 
     /**
-     * Busca usuario por ID (para pantallas de perfil).
-     *
-     * @param id ID del usuario.
-     * @return Usuario encontrado o null si no existe.
+     * Busca usuario por ID primario.
+     * Delega completamente al DAO de persistencia.
+     * 
+     * @param id identificador único del usuario
+     * @return usuario encontrado o null
      */
     public Usuario findById(Integer id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.get(Usuario.class, id);
-        } catch (Exception e) {
-            System.err.println("Error buscando usuario: " + e.getMessage());
-            return null;
-        }
+        return dao.findById(id);
     }
 }
+

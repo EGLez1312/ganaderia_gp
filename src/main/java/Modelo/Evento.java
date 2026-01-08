@@ -29,43 +29,81 @@ public class Evento {
     @Column(name = "tipo_evento", length = 30)
     private String tipoEvento;
 
-    @Column(length = 10)
-    private LocalDate fecha;
+    @Column(length = 10, name = "fecha_evento")
+    private LocalDate fechaEvento;             
 
-    @Column(length = 200)
-    private String detalles;
+    @Column(length = 200, name = "observaciones")
+    private String observaciones;              
+
+    @Column(nullable = false)
+    private boolean activo = true;
 
     // Constructores
-    public Evento() {}
+    public Evento() {
+    }
 
     /**
      * Constructor para nuevo evento (sin ID).
      */
-    public Evento(Oveja oveja, String tipoEvento, LocalDate fecha, String detalles) {
+    public Evento(Oveja oveja, String tipoEvento, LocalDate fechaEvento, String observaciones) {
         this.oveja = oveja;
         this.tipoEvento = tipoEvento;
-        this.fecha = fecha;
-        this.detalles = detalles;
+        this.fechaEvento = fechaEvento;
+        this.observaciones = observaciones;
+        this.activo = true;
     }
 
     // Getters y Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    public Integer getId() {
+        return id;
+    }
 
-    public Oveja getOveja() { return oveja; }
-    public void setOveja(Oveja oveja) { this.oveja = oveja; }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-    public String getTipoEvento() { return tipoEvento; }
-    public void setTipoEvento(String tipoEvento) { this.tipoEvento = tipoEvento; }
+    public Oveja getOveja() {
+        return oveja;
+    }
 
-    public LocalDate getFecha() { return fecha; }
-    public void setFecha(LocalDate fecha) { this.fecha = fecha; }
+    public void setOveja(Oveja oveja) {
+        this.oveja = oveja;
+    }
 
-    public String getDetalles() { return detalles; }
-    public void setDetalles(String detalles) { this.detalles = detalles; }
+    public String getTipoEvento() {
+        return tipoEvento;
+    }
+
+    public void setTipoEvento(String tipoEvento) {
+        this.tipoEvento = tipoEvento;
+    }
+
+    public LocalDate getFechaEvento() {
+        return fechaEvento;
+    } 
+
+    public void setFechaEvento(LocalDate fechaEvento) {
+        this.fechaEvento = fechaEvento;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    } 
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+    public boolean isActivo() {
+        return activo;
+    }
+
+    public void setActivo(boolean activo) {
+        this.activo = activo;
+    }
 
     @Override
     public String toString() {
-        return tipoEvento + " (" + fecha + ")";
+        return tipoEvento + " (" + fechaEvento + ")";
     }
 }

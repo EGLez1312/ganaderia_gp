@@ -4,6 +4,7 @@
  */
 package Vista;
 
+import DAO.UsuarioDAO;
 import Modelo.Usuario;
 import Servicio.UsuarioService;
 import Util.PasswordEncoderUtil;
@@ -22,7 +23,7 @@ import java.awt.event.KeyEvent;
  */
 public class LoginFrame extends JFrame {
 
-    private final UsuarioService usuarioService = new UsuarioService();
+    private final UsuarioService usuarioService;
 
     // Componentes
     private JTextField txtUsername;
@@ -39,6 +40,7 @@ public class LoginFrame extends JFrame {
      * Constructor que inicializa la ventana de login.
      */
     public LoginFrame() {
+        this.usuarioService = new UsuarioService(new UsuarioDAO(), new PasswordEncoderUtil());
         setTitle("Ganadería GP - Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initComponents();
@@ -155,8 +157,8 @@ public class LoginFrame extends JFrame {
         Usuario usuario = usuarioService.login(username, password);
         if (usuario != null) {
             JOptionPane.showMessageDialog(this, "¡Bienvenido " + usuario.getNombre() + "!");
-            /* TODO: Abrir ventana principal
-            new PrincipalFrame(usuario).setVisible(true); */
+            // Abrir ventana principal
+            new PrincipalFrame(usuario).setVisible(true);
             dispose();
         } else {
             JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Login fallido", JOptionPane.ERROR_MESSAGE);

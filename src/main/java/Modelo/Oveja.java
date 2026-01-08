@@ -32,7 +32,7 @@ public class Oveja {
     @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
-    @Column(length = 1)
+    @Column(length = 1, nullable = false)
     private String sexo;  // 'H' o 'M'
 
     @Column(name = "peso_actual", columnDefinition = "DECIMAL(5,2)")
@@ -40,6 +40,9 @@ public class Oveja {
 
     @Column(length = 50)
     private String estadoSalud;
+    
+    @Column(nullable = false)
+    private boolean activo = true;
 
     // Constructores
     public Oveja() {}
@@ -55,6 +58,7 @@ public class Oveja {
         this.sexo = sexo;
         this.pesoActual = pesoActual;
         this.estadoSalud = estadoSalud;
+        this.activo = true;
     }
 
     // Getters y Setters
@@ -78,6 +82,9 @@ public class Oveja {
 
     public String getEstadoSalud() { return estadoSalud; }
     public void setEstadoSalud(String estadoSalud) { this.estadoSalud = estadoSalud; }
+
+    public boolean isActivo() { return activo; }
+    public void setActivo(boolean activo) { this.activo = activo;  }
 
     @Override
     public String toString() {
