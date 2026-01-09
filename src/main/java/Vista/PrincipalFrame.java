@@ -7,10 +7,6 @@ package Vista;
 import Modelo.Usuario;
 import javax.swing.*;
 import java.awt.*;
-import Vista.OvejaPanel;
-import Vista.EventoPanel;
-import Vista.EstadisticasPanel;
-import Vista.PerfilPanel;
 import java.awt.event.ActionEvent;
 
 /**
@@ -24,6 +20,7 @@ public class PrincipalFrame extends JFrame {
     
     private final Usuario usuarioLogueado;
     private JTabbedPane tabbedPane;
+    private JLabel lblStatus;
     
     // Paneles de las 4 pestañas obligatorias
     private OvejaPanel ovejasPanel;
@@ -85,7 +82,7 @@ public class PrincipalFrame extends JFrame {
         statusBar.setPreferredSize(new Dimension(0, 25));
         
         JLabel lblUsuario = new JLabel("Usuario: " + usuarioLogueado.getUsername(), JLabel.LEFT);
-        JLabel lblStatus = new JLabel("Listo | Pestaña activa: " + tabbedPane.getTitleAt(0), JLabel.RIGHT);
+        lblStatus = new JLabel("Listo | Pestaña activa: " + tabbedPane.getTitleAt(0), JLabel.RIGHT);
         
         statusBar.add(lblUsuario, BorderLayout.WEST);
         statusBar.add(lblStatus, BorderLayout.EAST);
@@ -97,7 +94,7 @@ public class PrincipalFrame extends JFrame {
         // 5. Enter funciona en todas pestañas
         getRootPane().setDefaultButton(null);
     }
-
+    
     /**
      * Crea la barra de menú con mnemónicos Alt+1,2,3,4.
      * Cada menú cambia pestaña activa (interfaz dinámica).
@@ -145,18 +142,38 @@ public class PrincipalFrame extends JFrame {
         return menuBar;
     }
 
-    /**
-     * Configura listeners adicionales para navegación fluida.
+     /**
+     * Configura listeners adicionales para navegación fluida y actualización de
+     * estado.
      */
     private void configurarListeners() {
+        // Listener para detectar el cambio de pestaña (ratón o teclado)
+        tabbedPane.addChangeListener(e -> {
+            int index = tabbedPane.getSelectedIndex();
+            String titulo = tabbedPane.getTitleAt(index);
+
+            // Actualiza la barra de estado inferior dinámicamente
+            if (lblStatus != null) {
+                lblStatus.setText("Listo | Pestaña activa: " + titulo);
+            }
+
+            // Si entramos en la pestaña de Eventos (índice 1), refrescamos el combo
+            if (index == 1 && eventosPanel != null) {
+                // Asegúrate de que el método en EventoPanel sea público
+                eventosPanel.cargarOvejasCombo();
+            }
+        });
+
         // Ctrl+Tab cambia pestañas
         getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
-            .put(KeyStroke.getKeyStroke("control TAB"), "nextTab");
+                .put(KeyStroke.getKeyStroke("control TAB"), "nextTab");
         getRootPane().getActionMap().put("nextTab", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int index = tabbedPane.getSelectedIndex() + 1;
-                if (index >= tabbedPane.getTabCount()) index = 0;
+                if (index >= tabbedPane.getTabCount()) {
+                    index = 0;
+                }
                 tabbedPane.setSelectedIndex(index);
             }
         });

@@ -198,7 +198,7 @@ public class EventoPanel extends JPanel {
      * Carga todas las ovejas activas en el combo selector.
      * Formato: "NUMERO - RAZA" para fácil identificación.
      */
-    private void cargarOvejasCombo() {
+    public void cargarOvejasCombo() {
         try {
             if (ovejaDAO == null) {
                 ovejaDAO = new OvejaDAO();

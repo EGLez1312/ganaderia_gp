@@ -176,4 +176,33 @@ public class OvejaDAO {
             }
         }
     }
+
+    /**
+     * Cuenta TOTAL ovejas en BD (activas + inactivas). Para KPIs de
+     * estadísticas completas del rebaño histórico.
+     *
+     * @return número total de registros Oveja
+     */
+    public long contarTotal() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long resultado = session.createQuery("SELECT COUNT(o) FROM Oveja o", Long.class)
+                    .uniqueResult();
+            return resultado != null ? resultado : 0L;
+        }
+    }
+
+    /**
+     * Cuenta ovejas ACTIVAS (activo=true) en BD. Optimizado para KPIs - directo
+     * COUNT sin cargar entidades.
+     *
+     * @return número de ovejas con activo=true
+     */
+    public long contarActivas() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long resultado = session.createQuery("SELECT COUNT(o) FROM Oveja o WHERE o.activo = true", Long.class)
+                    .uniqueResult();
+            return resultado != null ? resultado : 0L;
+        }
+    }
+
 }
