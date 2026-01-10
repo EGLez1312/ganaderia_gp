@@ -19,6 +19,5 @@ DAO\OvejaDAO.class
 DAO\EventoDAO.class
 Vista\LoginFrame$1.class
 Modelo\Evento.class
-Vista\OvejaPanel$1.class
 Vista\EventoPanel$1.class
 Modelo\Oveja.class

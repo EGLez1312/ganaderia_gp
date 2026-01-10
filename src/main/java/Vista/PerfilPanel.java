@@ -7,110 +7,135 @@ package Vista;
 import DAO.UsuarioDAO;
 import Modelo.Usuario;
 import Util.PasswordEncoderUtil;
+import Servicio.UsuarioService;
 import javax.swing.*;
 import java.awt.*;
-import java.time.LocalDateTime;
+import java.util.Arrays;
 
 /**
- * Panel edición perfil usuario logueado.
- * Permite modificar nombre, apellidos, email y contraseña opcionalmente.
+ * Panel editable para gestión de perfil de usuario autenticado. Permite
+ * modificar nombre, apellidos, email y contraseña opcional. Cumple requisitos:
+ * formulario dinámico, ToolTips, mnemonic (Alt+G), validación robusta, limpieza
+ * memoria contraseñas, seguridad BD.
+ *
+ * @author Elena González
+ * @version 1.0
  */
 public class PerfilPanel extends JPanel {
-    
-    /** Usuario autenticado que edita su perfil */
-    private Usuario usuario;
-    
-    /** Campos de entrada del formulario */
-    private JTextField txtNombre, txtApellidos, txtEmail;
-    private JPasswordField txtPassword;
-    
-    /** DAO para persistir cambios del perfil */
-    private UsuarioDAO usuarioDAO; // Instancia única para el panel
 
     /**
-     * Constructor principal del panel de perfil.
-     * Valida usuario no nulo e inicializa componentes y datos.
-     * 
-     * @param usuario usuario autenticado cuya información se editará
-     * @throws IllegalArgumentException si el usuario es null
+     * Usuario logueado que edita su propio perfil.
+     */
+    private final Usuario usuario;
+
+    /**
+     * Campos formulario editables.
+     */
+    private JTextField txtNombre, txtApellidos, txtEmail;
+    private JPasswordField txtPassword;
+
+    /**
+     * Servicio de negocio para persistencia segura.
+     */
+    private UsuarioService usuarioService;
+
+    /**
+     * Constructor valida usuario e inicializa UI con datos precargados.
+     *
+     * @param usuario autenticado (no null).
+     * @throws IllegalArgumentException si usuario nulo o inactivo.
      */
     public PerfilPanel(Usuario usuario) {
-        if (usuario == null) {
-            throw new IllegalArgumentException("El usuario no puede ser nulo");
+        if (usuario == null || !usuario.isActivo()) {
+            throw new IllegalArgumentException("Usuario válido y activo requerido");
         }
         this.usuario = usuario;
-        this.usuarioDAO = new UsuarioDAO(); // Inicializamos el DAO aquí
         initComponents();
         cargarDatos();
     }
 
     /**
-     * Inicializa la interfaz usando BorderLayout + GridBagLayout.
-     * Crea formulario profesional con username de solo lectura y campos editables.
+     * Crea interfaz profesional: título centrado, formulario GridBagLayout,
+     * username readonly destacado, campos editables con ToolTip contraseña,
+     * botón Guardar con mnemonic Alt+G. Bordes/márgenes para UX premium.
      */
     private void initComponents() {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        setBackground(Color.WHITE);
 
-        // Título con margen inferior
+        // Título principal
         JLabel lblTitulo = new JLabel("Mi Perfil", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 22));
-        lblTitulo.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
+        lblTitulo.setForeground(new Color(45, 85, 150));
+        lblTitulo.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
         add(lblTitulo, BorderLayout.NORTH);
 
-        // Formulario principal
+        // Formulario responsive
         JPanel pnlForm = new JPanel(new GridBagLayout());
+        pnlForm.setBackground(Color.WHITE);
         GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(8, 8, 8, 8);
+        c.insets = new Insets(12, 12, 12, 12);
         c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 0.5;
         c.gridx = 0;
 
-        // Fila 0: Username (solo lectura)
+        // Username (solo lectura, destacado)
         c.gridy = 0;
         pnlForm.add(new JLabel("Username:"), c);
         c.gridx = 1;
         JLabel lblUsername = new JLabel(usuario.getUsername());
         lblUsername.setFont(new Font("Arial", Font.ITALIC, 14));
         lblUsername.setForeground(Color.DARK_GRAY);
+        lblUsername.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         pnlForm.add(lblUsername, c);
 
-        // Fila 1: Nombre
-        c.gridy = 1; c.gridx = 0;
-        pnlForm.add(new JLabel("Nombre:"), c);
+        // Nombre editable
+        c.gridy = 1;
+        c.gridx = 0;
+        pnlForm.add(new JLabel("Nombre *:"), c);
         c.gridx = 1;
-        txtNombre = new JTextField(20);
+        txtNombre = new JTextField(22);
+        txtNombre.setToolTipText("Tu nombre real (obligatorio)");
         pnlForm.add(txtNombre, c);
 
-        // Fila 2: Apellidos
-        c.gridy = 2; c.gridx = 0;
-        pnlForm.add(new JLabel("Apellidos:"), c);
+        // Apellidos
+        c.gridy = 2;
+        c.gridx = 0;
+        pnlForm.add(new JLabel("Apellidos *:"), c);
         c.gridx = 1;
-        txtApellidos = new JTextField(20);
+        txtApellidos = new JTextField(22);
+        txtApellidos.setToolTipText("Apellidos completos (obligatorio)");
         pnlForm.add(txtApellidos, c);
 
-        // Fila 3: Email
-        c.gridy = 3; c.gridx = 0;
-        pnlForm.add(new JLabel("Email:"), c);
+        // Email con validación
+        c.gridy = 3;
+        c.gridx = 0;
+        pnlForm.add(new JLabel("Email *:"), c);
         c.gridx = 1;
-        txtEmail = new JTextField(20);
+        txtEmail = new JTextField(22);
+        txtEmail.setToolTipText("Email válido para notificaciones/recuperación");
         pnlForm.add(txtEmail, c);
 
-        // Fila 4: Nueva contraseña (opcional)
-        c.gridy = 4; c.gridx = 0;
+        // Nueva contraseña opcional
+        c.gridy = 4;
+        c.gridx = 0;
         pnlForm.add(new JLabel("Nueva contraseña:"), c);
         c.gridx = 1;
-        txtPassword = new JPasswordField(20);
-        txtPassword.setToolTipText("Dejar en blanco para mantener la actual");
+        txtPassword = new JPasswordField(22);
+        txtPassword.setToolTipText("Dejar vacío para mantener actual (mínimo 6 chars)");
         pnlForm.add(txtPassword, c);
 
-        // Fila 5: Botón Guardar
-        c.gridy = 5; 
+        // Botón acción principal
+        c.gridy = 5;
         c.gridx = 0;
         c.gridwidth = 2;
-        c.insets = new Insets(20, 8, 8, 8);
+        c.insets = new Insets(25, 12, 12, 12);
         JButton btnGuardar = new JButton("Actualizar Perfil");
         btnGuardar.setFont(new Font("Arial", Font.BOLD, 14));
-        btnGuardar.setMnemonic('G');
+        btnGuardar.setMnemonic('G');  // Alt+G
+        btnGuardar.setBackground(new Color(50, 150, 50));
+        btnGuardar.setForeground(Color.WHITE);
         btnGuardar.addActionListener(e -> guardarPerfil());
         pnlForm.add(btnGuardar, c);
 
@@ -118,55 +143,84 @@ public class PerfilPanel extends JPanel {
     }
 
     /**
-     * Carga los datos actuales del usuario en los campos del formulario.
-     * Limpia el campo de contraseña por seguridad.
+     * Carga datos actuales del usuario en campos formulario. Limpia contraseña
+     * por seguridad (never show).
      */
     private void cargarDatos() {
-        txtNombre.setText(usuario.getNombre());
-        txtApellidos.setText(usuario.getApellidos());
-        txtEmail.setText(usuario.getEmail());
-        txtPassword.setText(""); 
+        txtNombre.setText(usuario.getNombre() != null ? usuario.getNombre() : "");
+        txtApellidos.setText(usuario.getApellidos() != null ? usuario.getApellidos() : "");
+        txtEmail.setText(usuario.getEmail() != null ? usuario.getEmail() : "");
+        txtPassword.setText("");  // Nunca precargar
     }
 
     /**
-     * Guarda los cambios del perfil del usuario en la base de datos. Implementa
-     * validación robusta de campos, cifrado seguro de contraseña y limpieza de
-     * memoria.
+     * Valida formulario → actualiza entidad → persiste vía Service. Encripta
+     * nueva pass si proporcionada, limpia memoria char[]. Feedback visual
+     * éxito/error con focus automático.
      */
     private void guardarPerfil() {
         String nombre = txtNombre.getText().trim();
         String apellidos = txtApellidos.getText().trim();
         String email = txtEmail.getText().trim();
 
-        // Validación
-        if (nombre.isEmpty() || apellidos.isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-            JOptionPane.showMessageDialog(this, "Por favor, completa todos los campos correctamente.", "Validación", JOptionPane.WARNING_MESSAGE);
+        // Validaciones robustas
+        if (nombre.isEmpty() || apellidos.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Nombre y apellidos obligatorios", "Validación", JOptionPane.WARNING_MESSAGE);
+            txtNombre.requestFocus();
+            return;
+        }
+        if (!email.matches("^[A-Za-z0-9+_.-]+@([A-Za-z0-9-]+\\.)+[A-Za-z]{2,}$")) {
+            JOptionPane.showMessageDialog(this, "Email inválido", "Validación", JOptionPane.WARNING_MESSAGE);
+            txtEmail.selectAll();
+            txtEmail.requestFocus();
             return;
         }
 
         try {
-            // Actualizar datos básicos
+            // Inyectar Service (MVC: Panel→Service→DAO)
+            UsuarioDAO dao = new UsuarioDAO();
+            PasswordEncoderUtil encoder = new PasswordEncoderUtil();
+            usuarioService = new UsuarioService(dao, encoder);
+
+            // Actualizar campos básicos
             usuario.setNombre(nombre);
             usuario.setApellidos(apellidos);
             usuario.setEmail(email);
 
-            // Nueva contraseña opcional
+            // Contraseña opcional + limpieza memoria
             char[] passChars = txtPassword.getPassword();
-            if (passChars.length > 0) {
-                PasswordEncoderUtil encoder = new PasswordEncoderUtil();  // Instancia separada
-                String passwordCifrada = encoder.encode(new String(passChars));
-                usuario.setPassword(passwordCifrada);
-                java.util.Arrays.fill(passChars, '0');  // Limpieza memoria
+            if (passChars.length > 5) {  // Mínimo 6
+                String passPlana = new String(passChars);
+                usuario.setPassword(encoder.encode(passPlana));
+                Arrays.fill(passChars, '0');  // Zeroizar memoria
             }
 
-            // Persistir
-            usuarioDAO.update(usuario);
-            JOptionPane.showMessageDialog(this, "✅ Perfil actualizado correctamente");
-            txtPassword.setText("");
+            // Persistir cambios
+            dao.actualizar(usuario);  // ← CORREGIDO: actualizar
+            JOptionPane.showMessageDialog(this,
+                    "¡Perfil actualizado correctamente!\nRefresca para ver cambios.",
+                    "Guardado", JOptionPane.INFORMATION_MESSAGE);
+
+            txtPassword.setText("");  // Limpiar UI
+            txtNombre.requestFocus();
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "❌ Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Error guardando: " + e.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
         }
     }
-}
 
+    /**
+     * @return Usuario original (no mutado externamente).
+     */
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    /**
+     * Refresca panel con datos BD actuales (post-actualizaciones externas).
+     */
+    public void refresh() {
+        cargarDatos();
+    }
+}

@@ -4,112 +4,187 @@
  */
 package DAO;
 
-import org.hibernate.Session;
 import Modelo.Usuario;
 import Util.HibernateUtil;
-import org.hibernate.Transaction;
 import Util.PasswordEncoderUtil;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
+import java.util.List;
 
 /**
- * DAO para operaciones CRUD de usuarios con Hibernate, utilizando HibernateUtil para la gestión de sesiones.
- * Sustituye la versión anterior manteniendo la misma interfaz pública.
+ * DAO para operaciones CRUD de usuarios con Hibernate, soft-delete y validación de login.
+ * Cumple requisitos: tabla usuarios con ID, username, password encriptada, email,
+ * activo y operaciones INSERT/UPDATE/SELECT/DELETE lógicas.
  * 
  * @author Elena González
  * @version 1.0
  */
 public class UsuarioDAO {
+
+    /**
+     * Obtiene Session Hibernate lazy (maneja Hibernate no inicializado).
+     *
+     * @return Session activa.
+     * @throws IllegalStateException si HibernateUtil falló.
+     */
+    protected Session getSession() {
+        try {
+            return HibernateUtil.getSessionFactory().openSession();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Hibernate no disponible: " + ex.getMessage(), ex);
+        }
+    }
     
     /**
-     * Busca usuario por username (para validación de duplicados).
-     * Solo devuelve usuarios activos (activo = 1).
+     * Lista todos los usuarios activos (activo = true).
      * 
-     * @param username el nombre de usuario a buscar
-     * @return el usuario encontrado o null si no existe
+     * @return lista de usuarios activos.
      */
-    public Usuario findByUsername(String username) {
+    public List<Usuario> listarTodos() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // SQL Nativo para evitar problemas de tipos Boolean/Integer en HQL
-            String sql = "SELECT * FROM usuario WHERE username = :u AND activo = 1";
-            return session.createNativeQuery(sql, Usuario.class)
-                          .setParameter("u", username)
-                          .uniqueResult();
+            return session.createQuery("FROM Usuario WHERE activo = true", Usuario.class).list();
         }
     }
 
     /**
-     * Inserta un nuevo usuario en la base de datos.
+     * Inserta nuevo usuario con password encriptada.
      * 
-     * @param usuario el objeto Usuario a insertar
+     * @param usuario objeto Usuario preparado (password ya encriptada).
      */
-    public void insert(Usuario usuario) {
+    public void insertar(Usuario usuario) {
+        Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
+            tx = session.beginTransaction();
             session.persist(usuario);
             tx.commit();
-        }
-    }
-    
-    /**
-     * Actualiza un usuario existente en la base de datos. Utiliza merge() para
-     * sincronizar los cambios de la entidad desconectada.
-     *
-     * @param usuario el objeto Usuario con los datos actualizados
-     */
-    public void update(Usuario usuario) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
-            // Usamos merge para volver a "enganchar" la entidad y actualizarla
-            session.merge(usuario);
-            tx.commit();
         } catch (Exception e) {
+            if (tx != null) tx.rollback();
             e.printStackTrace();
         }
     }
 
     /**
-     * Busca un usuario por su dirección de email. Solo devuelve usuarios
-     * activos (activo = 1). Utiliza SQL nativo para máxima compatibilidad con
-     * Hibernate 6 y MySQL.
-     *
-     * @param email la dirección de email a buscar
-     * @return el usuario encontrado o null si no existe
+     * Actualiza usuario existente (merge para entidades desconectadas).
+     * 
+     * @param usuario objeto con ID y datos actualizados.
      */
-    public Usuario findByEmail(String email) {
+    public void actualizar(Usuario usuario) {
+        Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // SQL Nativo para ir sobre seguro con Hibernate 6
-            String sql = "SELECT * FROM usuario WHERE email = :email AND activo = 1";
-            return session.createNativeQuery(sql, Usuario.class)
-                    .setParameter("email", email)
-                    .uniqueResult();
+            tx = session.beginTransaction();
+            session.merge(usuario);
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Da de baja usuario (soft-delete: activo = false).
+     * 
+     * @param id ID del usuario a eliminar lógicamente.
+     */
+    public void eliminar(int id) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            Usuario usuario = session.get(Usuario.class, id);
+            if (usuario != null) {
+                usuario.setActivo(false);
+                session.merge(usuario);
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Reincorpora usuario inactivo (activo = true).
+     * 
+     * @param id ID del usuario a reactivar.
+     */
+    public void reincorporar(int id) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            Usuario usuario = session.get(Usuario.class, id);
+            if (usuario != null) {
+                usuario.setActivo(true);
+                session.merge(usuario);
+                tx.commit();
+            }
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Busca usuario por username (solo activos).
+     * 
+     * @param username nombre de usuario.
+     * @return Usuario o null.
+     */
+    public Usuario findByUsername(String username) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Query<Usuario> query = session.createQuery(
+                    "FROM Usuario WHERE username = :u AND activo = true", Usuario.class);
+            query.setParameter("u", username);
+            return query.uniqueResult();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
-   
+
     /**
-     * Busca un usuario por su ID primario. Utiliza session.get() para carga
-     * directa por clave primaria (más eficiente que queries).
-     *
-     * @param id identificador único del usuario (clave primaria)
-     * @return usuario encontrado o null si no existe
+     * Busca usuario por email (solo activos).
+     * 
+     * @param email dirección de correo.
+     * @return Usuario o null.
+     */
+    public Usuario findByEmail(String email) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Query<Usuario> query = session.createQuery(
+                    "FROM Usuario WHERE email = :email AND activo = true", Usuario.class);
+            query.setParameter("email", email);
+            return query.uniqueResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Busca usuario por ID.
+     * 
+     * @param id clave primaria.
+     * @return Usuario o null.
      */
     public Usuario findById(Integer id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.get(Usuario.class, id);
         } catch (Exception e) {
-            // Considera usar un Logger profesional en vez de System.err
+            e.printStackTrace();
             return null;
         }
     }
-    
+
     /**
-     * Valida login: username + password + activo=1
+     * Valida login: username + password hasheada + activo=true.
+     * 
+     * @param username nombre de usuario.
+     * @param rawPassword contraseña plana.
+     * @return Usuario autenticado o null.
      */
     public Usuario login(String username, String rawPassword) {
         Usuario usuario = findByUsername(username);
-        if (usuario != null) {
-            PasswordEncoderUtil encoder = new PasswordEncoderUtil();  // ← Instancia local
+        if (usuario != null && usuario.isActivo()) {
+            PasswordEncoderUtil encoder = new PasswordEncoderUtil();
             if (encoder.matches(rawPassword, usuario.getPassword())) {
                 return usuario;
             }
@@ -117,4 +192,38 @@ public class UsuarioDAO {
         return null;
     }
 
+    /**
+     * Cuenta usuarios totales (activos + inactivos).
+     * 
+     * @return número total de registros.
+     */
+    public long contarTotal() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long resultado = session.createQuery("SELECT COUNT(u) FROM Usuario u", Long.class).uniqueResult();
+            return resultado != null ? resultado : 0L;
+        }
+    }
+
+    /**
+     * Cuenta usuarios activos.
+     * 
+     * @return número de usuarios con activo = true.
+     */
+    public long contarActivos() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long resultado = session.createQuery("SELECT COUNT(u) FROM Usuario u WHERE u.activo = true", Long.class).uniqueResult();
+            return resultado != null ? resultado : 0L;
+        }
+    }
+
+    /**
+     * Lista usuarios inactivos.
+     * 
+     * @return lista de usuarios dados de baja.
+     */
+    public List<Usuario> listarInactivos() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery("FROM Usuario WHERE activo = false", Usuario.class).list();
+        }
+    }
 }

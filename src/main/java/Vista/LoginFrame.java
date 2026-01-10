@@ -8,7 +8,6 @@ import DAO.UsuarioDAO;
 import Modelo.Usuario;
 import Servicio.UsuarioService;
 import Util.PasswordEncoderUtil;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -32,7 +31,7 @@ public class LoginFrame extends JFrame {
     private JButton btnRegistro;
     private JButton btnRecuperar;
     
-    // Gestión de ventanas hijas (SOLUCIONA DUPLICADOS)
+    // Gestión de ventanas hijas
     private RegistroFrame registroFrame;
     private RecuperarPasswordFrame recuperarFrame;
 
@@ -95,7 +94,7 @@ public class LoginFrame extends JFrame {
         btnRegistro.setMnemonic('R');
         btnRecuperar.setMnemonic('C');
 
-        // Enter ejecuta Acceder (botón por defecto)
+        // Enter ejecuta Acceder
         getRootPane().setDefaultButton(btnAcceso);
 
         pnlBotones.add(btnAcceso);

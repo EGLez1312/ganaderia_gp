@@ -7,132 +7,191 @@ package Vista;
 import DAO.UsuarioDAO;
 import Modelo.Usuario;
 import Util.PasswordEncoderUtil;
+import Servicio.UsuarioService;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 
 /**
- * Ventana para recuperar contraseña vía email.
- * Busca usuario y muestra datos para reset.
- * 
+ * Ventana modal para recuperación de contraseña por email. Busca usuario
+ * activo, genera contraseña temporal (demo), actualiza BD y muestra datos de
+ * cuenta. Cumple requisitos: botón 2 login, ToolTips, mnemonics (Alt+R/V),
+ * Enter=recuperar, errores gestionados.
+ *
  * @author Elena González
  * @version 1.0
  */
 public class RecuperarPasswordFrame extends JFrame {
-    private LoginFrame parent;
+
+    /**
+     * Referencia LoginFrame padre para comunicación post-recuperación.
+     */
+    private final LoginFrame parent;
+
+    /**
+     * Campo entrada email y panel resultados dinámicos.
+     */
     private JTextField txtEmail;
-    private UsuarioDAO usuarioDAO;
     private JLabel lblDatos;
 
+    /**
+     * Servicios inyectados para negocio/persistencia.
+     */
+    private UsuarioService usuarioService;
+
+    /**
+     * Constructor inicializa UI y centra ventana respecto padre.
+     *
+     * @param parent LoginFrame que abre recuperación.
+     */
     public RecuperarPasswordFrame(LoginFrame parent) {
         this.parent = parent;
         initComponents();
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(parent);
     }
 
+    /**
+     * Crea interfaz completa: instrucciones, email, resultados dinámicos,
+     * botones con mnemonics y Enter=RECUPERAR. Usa GridBagLayout responsive con
+     * ToolTips informativos y bordes visuales.
+     */
     private void initComponents() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setTitle("Recuperar Contraseña - Ganadería GP");
-        setSize(400, 300);
+        setSize(420, 320);
         setLayout(new GridBagLayout());
-        
+
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(12, 12, 12, 12);
         c.anchor = GridBagConstraints.WEST;
-        
-        // Instrucciones
-        c.gridx = 0; c.gridy = 0; c.gridwidth = 2;
+
+        // Título introductorio
+        c.gridx = 0;
+        c.gridy = 0;
+        c.gridwidth = 2;
         c.fill = GridBagConstraints.HORIZONTAL;
-        JLabel lblIntro = new JLabel("Introduce tu email:");
+        JLabel lblIntro = new JLabel("Introduce tu email registrado:");
         lblIntro.setFont(new Font("Arial", Font.BOLD, 14));
         add(lblIntro, c);
-        
-        // Email
+
+        // Campo email
         c.gridwidth = 1;
         c.gridy = 1;
         c.gridx = 0;
         add(new JLabel("Email:"), c);
         c.gridx = 1;
         txtEmail = new JTextField(20);
-        txtEmail.setToolTipText("Email registrado en el sistema");
+        txtEmail.setToolTipText("Email asociado a tu cuenta (ej: admin@ganaderia.es)");
         add(txtEmail, c);
-        
-        // Resultado
-        c.gridx = 0; c.gridy = 2; c.gridwidth = 2;
+
+        // Panel resultados dinámico
+        c.gridx = 0;
+        c.gridy = 2;
+        c.gridwidth = 2;
         lblDatos = new JLabel(" ", JLabel.CENTER);
-        lblDatos.setBorder(BorderFactory.createTitledBorder("Datos recuperados"));
-        lblDatos.setPreferredSize(new Dimension(350, 80));
+        lblDatos.setBorder(BorderFactory.createTitledBorder("Datos de la cuenta"));
+        lblDatos.setPreferredSize(new Dimension(370, 85));
+        lblDatos.setOpaque(true);
+        lblDatos.setBackground(Color.WHITE);
         add(lblDatos, c);
-        
-        // Botones
-        c.gridy = 3; c.fill = GridBagConstraints.HORIZONTAL;
+
+        // Botones alineados derecha
+        c.gridy = 3;
+        c.fill = GridBagConstraints.HORIZONTAL;
         JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        
-        JButton btnRecuperar = new JButton("RECUPERAR");
-        btnRecuperar.setMnemonic('R');
-        getRootPane().setDefaultButton(btnRecuperar);
-        btnRecuperar.addActionListener(e -> recuperarPassword());
-        
+
         JButton btnVolver = new JButton("Volver al Login");
-        btnVolver.setMnemonic('V');
+        btnVolver.setMnemonic('V');  // Alt+V
         btnVolver.addActionListener(e -> dispose());
-        
+
+        JButton btnRecuperar = new JButton("RECUPERAR");
+        btnRecuperar.setMnemonic('R');  // Alt+R
+        getRootPane().setDefaultButton(btnRecuperar);  // Enter = Recuperar
+        btnRecuperar.addActionListener(e -> recuperarPassword());
+
         pnlBotones.add(btnVolver);
         pnlBotones.add(btnRecuperar);
         add(pnlBotones, c);
     }
 
+    /**
+     * Valida email → busca usuario → genera pass temporal (demo) → actualiza BD
+     * → muestra datos → rellena LoginFrame. Gestiona todos errores: vacío, no
+     * encontrado, BD.
+     */
     private void recuperarPassword() {
         String email = txtEmail.getText().trim();
         if (email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Introduce tu email", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Introduce tu email registrado", "Campo requerido", JOptionPane.ERROR_MESSAGE);
             txtEmail.requestFocus();
             return;
         }
 
         try {
-            usuarioDAO = new UsuarioDAO();
-            Usuario usuario = usuarioDAO.findByEmail(email);
+            // Inyección Service (MVC correcto)
+            UsuarioDAO dao = new UsuarioDAO();
+            PasswordEncoderUtil encoder = new PasswordEncoderUtil();
+            usuarioService = new UsuarioService(dao, encoder);
 
-            if (usuario != null) {
-                String passTemporal = new PasswordEncoderUtil().encode("admin123");
-                usuario.setPassword(passTemporal);
+            Usuario usuario = dao.findByEmail(email);
+            if (usuario != null && usuario.isActivo()) {
+                // PASS TEMPORAL DEMO (NO encriptar para mostrarla)
+                String passTemporal = "admin123";
+                String passHash = encoder.encode(passTemporal);
+                usuario.setPassword(passHash);
+                dao.actualizar(usuario); 
 
-                usuarioDAO.update(usuario);
-                
+                // Mostrar datos recuperados (HTML para formato)
                 String datos = String.format(
-                    "<html><b>Usuario:</b> %s<br>" +
-                    "<b>Nombre:</b> %s %s<br>" +
-                    "<b>Última conexión:</b> %s<br>" +
-                    "<i>Nueva contraseña temporal: admin123</i></html>",
-                    usuario.getUsername(),
-                    usuario.getNombre(),
-                    usuario.getApellidos(),
-                    usuario.getUltimaConexion() != null ? 
-                        usuario.getUltimaConexion().toString() : "Nunca"
+                        "<html><div style='text-align:left;padding:10px;'>"
+                        + "<b>Usuario:</b> <code>%s</code><br>"
+                        + "<b>Nombre:</b> %s %s<br>"
+                        + "<b>Última conexión:</b> %s<br>"
+                        + "<b>Nueva contraseña:</b> <font color='blue'><b>admin123</b></font><br>"
+                        + "<i style='color:orange;'>Cambia en tu primera sesión</i>"
+                        + "</div></html>",
+                        usuario.getUsername(),
+                        usuario.getNombre() != null ? usuario.getNombre() : "",
+                        usuario.getApellidos() != null ? usuario.getApellidos() : "",
+                        usuario.getUltimaConexion() != null
+                        ? usuario.getUltimaConexion().toString() : "Nunca"
                 );
                 lblDatos.setText(datos);
-                
-                JOptionPane.showMessageDialog(this, 
-                    "¡Datos recuperados! Usa contraseña temporal.", 
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                
-                // Rellenar login
+
+                JOptionPane.showMessageDialog(this,
+                        String.format("¡Recuperado! Usuario: %s\nContraseña temporal: admin123", usuario.getUsername()),
+                        "Éxito", JOptionPane.INFORMATION_MESSAGE);
+
+                // Rellenar login padre
                 parent.getTxtUsername().setText(usuario.getUsername());
                 parent.getTxtPassword().requestFocus();
-                
+
             } else {
-                lblDatos.setText("<html><center>No se encontró usuario con ese email</center></html>");
-                JOptionPane.showMessageDialog(this, 
-                    "Email no registrado", "No encontrado", JOptionPane.WARNING_MESSAGE);
+                lblDatos.setText("<html><center>No se encontró usuario <b>activo</b> con ese email</center></html>");
+                JOptionPane.showMessageDialog(this,
+                        "Email no registrado o usuario inactivo", "No encontrado", JOptionPane.WARNING_MESSAGE);
+                txtEmail.selectAll();
+                txtEmail.requestFocus();
             }
-            
+
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            lblDatos.setText("<html><center>Error de conexión BD</center></html>");
+            JOptionPane.showMessageDialog(this, "Error BD: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    /**
+     * @return LoginFrame padre para comunicación.
+     */
+    public LoginFrame getParent() {
+        return parent;
+    }
+
+    /**
+     * main para pruebas independientes (thread-safe).
+     */
     public static void main(String[] args) {
-        new RecuperarPasswordFrame(null).setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            new RecuperarPasswordFrame(null).setVisible(true);
+        });
     }
 }

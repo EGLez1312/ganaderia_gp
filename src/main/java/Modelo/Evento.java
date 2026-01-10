@@ -26,6 +26,10 @@ public class Evento {
     @JoinColumn(name = "id_oveja", nullable = false)
     private Oveja oveja;
 
+    @ManyToOne
+    @JoinColumn(name = "id_oveja_madre", nullable = true)
+    private Oveja ovejaMadre;
+
     @Column(name = "tipo_evento", length = 30)
     private String tipoEvento;
 
@@ -68,6 +72,14 @@ public class Evento {
 
     public void setOveja(Oveja oveja) {
         this.oveja = oveja;
+    }
+
+    public Oveja getOvejaMadre() {
+        return ovejaMadre;
+    }
+
+    public void setOvejaMadre(Oveja ovejaMadre) {
+        this.ovejaMadre = ovejaMadre;
     }
 
     public String getTipoEvento() {

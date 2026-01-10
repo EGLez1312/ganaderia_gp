@@ -4,52 +4,95 @@
  */
 package Util;
 
+import Modelo.Evento;
+import Modelo.Oveja;
+import Modelo.Usuario;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
 /**
- * Utilidad centralizada para obtener la SessionFactory de Hibernate.
- * Se utiliza en toda la aplicación para acceder a las entidades JPA.
- * 
+ * Factory Singleton Hibernate 5.x con inicialización tolerante a fallos.
+ * Static block try-catch: NO falla la app si hibernate.cfg.xml/DB cae. DAOs
+ * detectan sessionFactory=null y manejan graceful degradation. Perfecto para
+ * desarrollo/debug sin parar app por config BD.
+ *
  * @author Elena González
  * @version 1.0
  */
 public class HibernateUtil {
-    private static final SessionFactory sessionFactory = buildSessionFactory();
 
     /**
-     * Construye la SessionFactory a partir de hibernate.cfg.xml.
-     * Se ejecuta una sola vez al cargar la clase.
+     * SessionFactory única (nullable si falla inicialización). Static block
+     * try-catch permite app continuar sin Hibernate.
      */
-    private static SessionFactory buildSessionFactory() {
+    private static SessionFactory sessionFactory;
+
+    /**
+     * **Static initializer tolerante**: construye SessionFactory o null. **NO
+     * lanza ExceptionInInitializerError** → app sobrevive. Loggea error
+     * console, DAOs manejan null graceful.
+     */
+    static {
         try {
-            return new Configuration()
-                    .configure("hibernate.cfg.xml")
-                    .addAnnotatedClass(Modelo.Usuario.class)
-                    .addAnnotatedClass(Modelo.Oveja.class)
-                    .addAnnotatedClass(Modelo.Evento.class)
+            sessionFactory = new Configuration()
+                    // Carga hibernate.cfg.xml)
+                    .configure()
+                    // 3 entidades JPA 2.2 javax.persistence
+                    .addAnnotatedClass(Usuario.class) // tabla usuario
+                    .addAnnotatedClass(Oveja.class) // tabla oveja
+                    .addAnnotatedClass(Evento.class) // tabla evento
                     .buildSessionFactory();
+
+            System.out.println("Hibernate inicializado correctamente");
+
         } catch (Throwable ex) {
-            System.err.println("Error al crear SessionFactory: " + ex.getMessage());
-            throw new ExceptionInInitializerError(ex);
+            // Loggea pero NO falla app (desarrollo-friendly)
+            System.err.println("Hibernate FALLÓ en static block:");
+            System.err.println("   " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
+            sessionFactory = null;  // DAO detecta y maneja
         }
     }
 
     /**
-     * Devuelve la SessionFactory única de la aplicación.
+     * Devuelve SessionFactory o lanza excepción clara si fallo. **DAOs llaman
+     * este método** → fallan solo cuando intentan BD.
      *
-     * @return SessionFactory configurada.
+     * @return SessionFactory activa.
+     * @throws IllegalStateException si hibernate.cfg.xml/DB/entidades fallan.
      */
     public static SessionFactory getSessionFactory() {
+        if (sessionFactory == null) {
+            throw new IllegalStateException(
+                    "Hibernate no inicializado. Revisar console:\n"
+                    + "• hibernate.cfg.xml existe en src/\n"
+                    + "• MySQL puerto 3308 corriendo\n"
+                    + "• DB ganaderia_gp existe\n"
+                    + "• Librerías Hibernate 5 + javax.persistence-api-2.2.jar");
+        }
         return sessionFactory;
     }
 
     /**
-     * Cierra la SessionFactory al finalizar la aplicación.
+     * Cierra SessionFactory graceful (solo si inicializada). Libera pool
+     * conexiones MySQL, previene "Too many connections".
      */
     public static void shutdown() {
-        if (sessionFactory != null) {
-            sessionFactory.close();
+        if (sessionFactory != null && !sessionFactory.isClosed()) {
+            try {
+                sessionFactory.close();
+                System.out.println("Hibernate SessionFactory cerrada");
+            } catch (Exception ex) {
+                System.err.println("Error shutdown: " + ex.getMessage());
+            }
         }
+    }
+
+    /**
+     * Estado diagnóstico (debug desarrollo).
+     *
+     * @return true si Hibernate listo para DAOs.
+     */
+    public static boolean isAvailable() {
+        return sessionFactory != null && !sessionFactory.isClosed();
     }
 }

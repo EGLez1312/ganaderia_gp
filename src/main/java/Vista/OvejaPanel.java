@@ -5,8 +5,10 @@
 package Vista;
 
 import DAO.OvejaDAO;
+import DAO.EventoDAO;
 import Modelo.Oveja;
 import Modelo.Usuario;
+import Modelo.Evento;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -14,6 +16,7 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 import java.math.BigDecimal;
 import com.toedter.calendar.JDateChooser;
+import java.time.LocalDate;
 
 /**
  * Panel CRUD completo para gestión de ovejas.
@@ -47,6 +50,9 @@ public class OvejaPanel extends JPanel {
     
     /** Botón para reincorporar oveja al censo activo */
     private JButton btnReincorporar;
+
+    /** Botón para registrar parto en oveja seleccionada (solo hembras adultas) */
+    private JButton btnParto;
     
     /** Modelo de datos de la tabla */
     private DefaultTableModel model;
@@ -76,29 +82,29 @@ public class OvejaPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Título
-        JLabel lblTitulo = new JLabel("🐑 Gestión de Ovejas", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("Gestión de Ovejas", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
         lblTitulo.setToolTipText("CRUD completo oveja");
         add(lblTitulo, BorderLayout.NORTH);
 
         // Panel superior: Botones
         JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton btnNuevo = new JButton("➕ Nueva");
+        JButton btnNuevo = new JButton("Nueva");
         btnNuevo.setMnemonic('N');
         btnNuevo.setToolTipText("Nueva oveja (Alt+N)");
         btnNuevo.addActionListener(e -> nuevaOveja());
 
-        JButton btnGuardar = new JButton("💾 Guardar");
+        JButton btnGuardar = new JButton("Guardar");
         btnGuardar.setMnemonic('G');
         btnGuardar.setToolTipText("Guardar cambios (Alt+G)");
         btnGuardar.addActionListener(e -> guardarOveja());
 
-        JButton btnEliminar = new JButton("🗑️ Dar oveja de baja");
+        JButton btnEliminar = new JButton("Dar oveja de baja");
         btnEliminar.setMnemonic('E');
         btnEliminar.setToolTipText("Eliminar fila seleccionada (Alt+E)");
         btnEliminar.addActionListener(e -> eliminarOveja());
 
-        JButton btnRecargar = new JButton("🔄 Recargar");
+        JButton btnRecargar = new JButton("Recargar");
         btnRecargar.setMnemonic('R');
         btnRecargar.setToolTipText("Actualizar tabla (Alt+R)");
         btnRecargar.addActionListener(e -> cargarOvejas());
@@ -123,6 +129,14 @@ public class OvejaPanel extends JPanel {
         pnlBotones.add(btnReincorporar);
         btnReincorporar.setVisible(false);
         add(pnlBotones, BorderLayout.NORTH);
+        
+        // Panel botón partos
+        JPanel pnlPartos = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        btnParto = new JButton("Registrar Parto");
+        btnParto.setEnabled(false);
+        btnParto.addActionListener(e -> registrarParto());
+        pnlPartos.add(btnParto);
+        add(pnlPartos, BorderLayout.PAGE_START);
 
         // Tabla central
         String[] columnas = {"ID", "Número", "Peso (kg)", "Raza", "Sexo", "Nacimiento", "Estado de salud"};
@@ -131,14 +145,22 @@ public class OvejaPanel extends JPanel {
         tblOveja.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int fila = tblOveja.getSelectedRow();
-                // Habilitamos reincorporar solo si hay una fila seleccionada Y estamos viendo bajas
-                btnReincorporar.setEnabled(fila != -1 && chkMostrarBajas.isSelected());
-            }
-        });
-        tblOveja.setToolTipText("Doble-click para editar");
-        tblOveja.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (e.getClickCount() == 2) editarSeleccionada();
+                boolean puedeParto = fila >= 0 && "H".equals((String) tblOveja.getValueAt(fila, 4));
+
+                btnParto.setEnabled(puedeParto);
+                btnReincorporar.setEnabled(fila >= 0 && chkMostrarBajas.isSelected());
+
+                if (puedeParto) {
+                    btnParto.setText("Parto");
+                    btnParto.setBackground(new Color(144, 238, 144));
+                    btnParto.setToolTipText("Alt+P - " + tblOveja.getValueAt(fila, 1) + " lista para parir");
+                } else {
+                    btnParto.setText("Registrar Parto");
+                    btnParto.setBackground(UIManager.getColor("Button.background"));
+                    btnParto.setToolTipText("Selecciona hembra adulta >30kg");
+                }
+
+                btnParto.repaint();
             }
         });
         add(new JScrollPane(tblOveja), BorderLayout.CENTER);
@@ -188,7 +210,7 @@ public class OvejaPanel extends JPanel {
 
         add(pnlForm, BorderLayout.SOUTH);
 
-        // getRootPane().setDefaultButton(btnGuardar); Enter = Guardar
+        // getRootPane().setDefaultButton(btnGuardar); // Enter = Guardar
     }
 
     /**
@@ -437,4 +459,98 @@ public class OvejaPanel extends JPanel {
             }
         }
     }
+
+    /**
+     * Registra parto completo para oveja madre seleccionada. 1. Valida hembra
+     * adulta activa (>30kg) 2. Crea nueva oveja hija con ID ingresada 3. Guarda
+     * hija (OvejaDAO) + evento parto (EventoDAO) 4. Recarga tabla y confirma
+     *
+     * @see OvejaDAO#insertar(Oveja)
+     * @see EventoDAO#insertar(Evento)
+     */
+    private void registrarParto() {
+        int fila = tblOveja.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Selecciona una oveja madre.");
+            return;
+        }
+
+        Oveja madre = obtenerOvejaPorFila(fila);
+        if (!"H".equals(madre.getSexo()) || !madre.isActivo()
+                || madre.getPesoActual().compareTo(new BigDecimal("30")) < 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Solo hembras adultas activas (>30kg) pueden parir.\nMadre: " + madre.getNumeroIdentificacion());
+            return;
+        }
+
+        // Sugerencia ID: siguiente número
+        long total = ovejaDAO.contarActivas();
+        int sugerencia = (int) Math.min(total + 1, Integer.MAX_VALUE);
+        String numHija = JOptionPane.showInputDialog(this,
+                "ID nueva oveja hija:\n(ej: ES0x00000000" + sugerencia + ")",
+                "Registrar Parto - " + madre.getNumeroIdentificacion(),
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (numHija != null && !numHija.trim().isEmpty()) {
+            String idHija = numHija.trim().toUpperCase();
+            try {
+                // Verificar duplicado
+                if (ovejaDAO.buscarPorNumero(idHija) != null) {
+                    JOptionPane.showMessageDialog(this, "ID hija ya existe: " + idHija);
+                    return;
+                }
+
+                // Crear hija (mismos valores por defecto que nuevaOveja)
+                Oveja hija = new Oveja();
+                hija.setNumeroIdentificacion(idHija);
+                hija.setRaza(madre.getRaza());  // Misma raza
+                hija.setSexo("H");
+                hija.setPesoActual(new BigDecimal("3.5"));  // Por defecto recién nacida
+                hija.setFechaNacimiento(LocalDate.now());
+                hija.setEstadoSalud("Sana - Recién nacida");
+                hija.setActivo(true);
+
+                ovejaDAO.insertar(hija);
+
+                // Evento parto EN LA MADRE
+                EventoDAO eventoDAO = new EventoDAO();
+                Evento parto = new Evento();
+                parto.setTipoEvento("Parto");
+                parto.setFechaEvento(LocalDate.now());
+                parto.setOveja(madre);
+                parto.setOvejaMadre(madre);
+                eventoDAO.insertar(parto);
+
+                cargarOvejas();
+                JOptionPane.showMessageDialog(this,
+                        "Parto registrado!\nMadre: " + madre.getNumeroIdentificacion()
+                        + "\nHija: " + idHija + " (ID: " + hija.getId() + ")");
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Obtiene Oveja completa por fila de tabla (llamado desde registrarParto).
+     * Usa ID para consulta completa en DAO.
+     *
+     * @param fila índice de fila seleccionada
+     * @return Oveja completa con todos los datos
+     */
+    private Oveja obtenerOvejaPorFila(int fila) {
+        Oveja m = new Oveja();
+        m.setId((Integer) tblOveja.getValueAt(fila, 0));
+        m.setNumeroIdentificacion((String) tblOveja.getValueAt(fila, 1));
+
+        String pesoStr = tblOveja.getValueAt(fila, 2).toString().trim();
+        m.setPesoActual(new BigDecimal(pesoStr.replace(",", "."))); 
+
+        m.setSexo((String) tblOveja.getValueAt(fila, 4));
+        m.setActivo(!chkMostrarBajas.isSelected());
+        return m;
+    }
+
 }

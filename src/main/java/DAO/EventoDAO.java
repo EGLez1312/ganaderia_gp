@@ -18,6 +18,20 @@ import java.util.List;
 public class EventoDAO {
 
     /**
+     * Obtiene Session Hibernate lazy (maneja Hibernate no inicializado).
+     *
+     * @return Session activa.
+     * @throws IllegalStateException si HibernateUtil falló.
+     */
+    protected Session getSession() {
+        try {
+            return HibernateUtil.getSessionFactory().openSession();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Hibernate no disponible: " + ex.getMessage(), ex);
+        }
+    }
+
+    /**
      * Inserta un nuevo evento en la base de datos.
      *
      * @param evento evento a registrar.
@@ -78,20 +92,29 @@ public class EventoDAO {
     }
 
     /**
-     * Elimina un evento por su ID.
+     * Elimina un evento de forma permanente de la base de datos.
      *
      * @param id ID del evento a eliminar.
      */
     public void eliminar(int id) {
+        Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Transaction tx = session.beginTransaction();
+            tx = session.beginTransaction();
+
+            // Buscamos la entidad en la base de datos
             Evento evento = session.get(Evento.class, id);
+
             if (evento != null) {
-                // CAMBIO: No usamos session.remove(), usamos el borrado lógico
-                evento.setActivo(false);
-                session.merge(evento);
+                // Borrado físico: elimina la fila de la tabla permanentemente
+                session.remove(evento);
                 tx.commit();
+                System.out.println("Evento eliminado con éxito.");
             }
+        } catch (Exception e) {
+            if (tx != null) {
+                tx.rollback(); // Deshace cambios si hay error
+            }
+            e.printStackTrace();
         }
     }
 }
