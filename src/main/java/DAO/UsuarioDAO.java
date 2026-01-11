@@ -11,6 +11,7 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 import java.util.List;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 /**
  * DAO para operaciones CRUD de usuarios con Hibernate, soft-delete y validación de login.
@@ -48,21 +49,49 @@ public class UsuarioDAO {
     }
 
     /**
-     * Inserta nuevo usuario con password encriptada.
+     * Registra nuevo usuario con contraseña hasheada BCrypt (12 rondas).
      * 
-     * @param usuario objeto Usuario preparado (password ya encriptada).
+     * @param usuario Usuario con contraseña en texto plano
+     * (se hashea automáticamente)
+     * @throws HibernateException si error BD/conexión
+     * @throws IllegalArgumentException si usuario==null o password vacío
+     * @see BCrypt#hashpw(String, String)
+     * @see #checkPassword(String, String)
      */
     public void insertar(Usuario usuario) {
+        String hashed = BCrypt.hashpw(usuario.getPassword(), BCrypt.gensalt(12));
+        usuario.setPassword(hashed);
+
+        Session session = HibernateUtil.getSessionFactory().openSession();
         Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try {
             tx = session.beginTransaction();
             session.persist(usuario);
             tx.commit();
         } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            e.printStackTrace();
+            if (tx != null) {
+                tx.rollback();
+            }
+            throw e;
+        } finally {
+            session.close();
         }
     }
+  
+    /**
+     * Valida login comparando password plano con hash BCrypt almacenado.
+     *
+     * @param plainPassword password ingresada por usuario (texto plano)
+     * @param hashedPassword hash BCrypt almacenado en BD (60 chars)
+     * @return "true" si credenciales válidas
+     * @throws NullPointerException si alguno parámetro es null
+     * @see BCrypt#checkpw(String, String)
+     * @see #insertarUsuario(Usuario)
+     */
+    public boolean checkPassword(String plainPassword, String hashedPassword) {
+        return BCrypt.checkpw(plainPassword, hashedPassword);
+    }
+
 
     /**
      * Actualiza usuario existente (merge para entidades desconectadas).
