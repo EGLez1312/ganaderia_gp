@@ -1,5 +1,6 @@
 App\App.class
 Vista\OvejaPanel.class
+Vista\PrincipalFrame$2.class
 Vista\EstadisticasPanel.class
 DAO\UsuarioDAO.class
 Vista\EventoPanel.class

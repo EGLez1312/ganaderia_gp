@@ -8,6 +8,9 @@ import Modelo.Usuario;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 /**
  * Ventana principal post-login con 4 paneles dinámicos obligatorios.
@@ -56,7 +59,7 @@ public class PrincipalFrame extends JFrame {
         // 2. Panel central: 4 pestañas dinámicas obligatorias
         tabbedPane = new JTabbedPane(JTabbedPane.TOP);
         tabbedPane.setToolTipText("Ctrl+Tab para navegar | Alt+1,2,3,4 desde menú");
-        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 14));
+        tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         
         // Pestaña 1: Ovejas (CRUD completo)
         ovejasPanel = new OvejaPanel(usuarioLogueado);
@@ -93,53 +96,61 @@ public class PrincipalFrame extends JFrame {
         
         // 5. Enter funciona en todas pestañas
         getRootPane().setDefaultButton(null);
+        
+        //Referencias paneles
+        ovejasPanel = (OvejaPanel) tabbedPane.getComponentAt(0);
+        eventosPanel = (EventoPanel) tabbedPane.getComponentAt(1);
+        statsPanel = (EstadisticasPanel) tabbedPane.getComponentAt(2);
+        perfilPanel = (PerfilPanel) tabbedPane.getComponentAt(3);
+
     }
-    
+
     /**
-     * Crea la barra de menú con mnemónicos Alt+1,2,3,4.
-     * Cada menú cambia pestaña activa (interfaz dinámica).
-     * 
-     * @return JMenuBar completamente configurada.
+     * MenúBar clásica compacta ocupando solo espacio necesario. Izquierda
+     * navegación + derecha sistema.
      */
     private JMenuBar crearMenuBar() {
         JMenuBar menuBar = new JMenuBar();
-        
-        // Menú Ovejas (Alt+1)
-        JMenu mnOvejas = new JMenu("Ovejas");
-        mnOvejas.setMnemonic('1');
-        mnOvejas.setToolTipText("Gestión CRUD ovejas (Alt+1)");
-        mnOvejas.addActionListener(e -> tabbedPane.setSelectedIndex(0));
-        menuBar.add(mnOvejas);
-        
-        // Menú Eventos (Alt+2)
-        JMenu mnEventos = new JMenu("Eventos");
-        mnEventos.setMnemonic('2');
-        mnEventos.setToolTipText("Partos y tratamientos (Alt+2)");
-        mnEventos.addActionListener(e -> tabbedPane.setSelectedIndex(1));
-        menuBar.add(mnEventos);
-        
-        // Menú Estadísticas (Alt+3)
-        JMenu mnStats = new JMenu("Estadísticas");
-        mnStats.setMnemonic('3');
-        mnStats.setToolTipText("KPIs y resúmenes (Alt+3)");
-        mnStats.addActionListener(e -> tabbedPane.setSelectedIndex(2));
-        menuBar.add(mnStats);
-        
-        // Menú Perfil (Alt+4)
-        JMenu mnPerfil = new JMenu("Mi Perfil");
-        mnPerfil.setMnemonic('4');
-        mnPerfil.setToolTipText("Editar datos usuario (Alt+4)");
-        mnPerfil.addActionListener(e -> tabbedPane.setSelectedIndex(3));
-        menuBar.add(mnPerfil);
-        
-        // Menú Ayuda
-        JMenu mnAyuda = new JMenu("❓ Ayuda");
-        mnAyuda.setMnemonic('A');
-        mnAyuda.setToolTipText("Documentación y soporte");
-        mnAyuda.add(new JMenuItem("Acerca de...")).addActionListener(e -> mostrarAcerca());
-        menuBar.add(mnAyuda);
-        
+
+        menuBar.add(crearMenuConMnemonic("Ovejas", 'O', e -> tabbedPane.setSelectedIndex(0)));
+        menuBar.add(crearMenuConMnemonic("Eventos", 'E', e -> tabbedPane.setSelectedIndex(1)));
+        menuBar.add(crearMenuConMnemonic("Estadísticas", 'S', e -> tabbedPane.setSelectedIndex(2)));
+        menuBar.add(crearMenuConMnemonic("Perfil", 'P', e -> tabbedPane.setSelectedIndex(3)));
+
+        JMenu mnSistema = new JMenu("Sistema");
+        mnSistema.setMnemonic('I');
+
+        JMenuItem itemCerrar = new JMenuItem("Cerrar sesión");
+        itemCerrar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, ActionEvent.ALT_MASK));
+        itemCerrar.addActionListener(e -> cerrarSesion());
+
+        JMenuItem itemAcerca = new JMenuItem("Acerca de...");
+        itemAcerca.setMnemonic('A');
+        itemAcerca.addActionListener(e -> mostrarAcerca());
+
+        mnSistema.add(itemCerrar);
+        mnSistema.addSeparator(); 
+        mnSistema.add(itemAcerca);
+
+        menuBar.add(mnSistema);
+
         return menuBar;
+    }
+
+    /**
+     * Crea un JMenu que se comporta como un acceso directo (Estilo Windows)
+     */
+    private JMenu crearMenuConMnemonic(String texto, char mnemonic, ActionListener accion) {
+        JMenu menu = new JMenu(texto);
+        menu.setMnemonic(mnemonic); // Esto subraya la letra (Alt + Letra)
+
+        // Al hacer clic en el nombre del menú, se cambia de pestaña
+        menu.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                accion.actionPerformed(null);
+            }
+        });
+        return menu;
     }
 
      /**
@@ -189,6 +200,36 @@ public class PrincipalFrame extends JFrame {
             "Hibernate + Swing + Maven\n" +
             "2026 © Todos los derechos reservados",
             "Acerca de Ganadería GP", JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    /**
+     * Crea JMenuItem reutilizable con mnemónico/accelerador.
+     *
+     * @param texto etiqueta visible
+     * @param accion ActionListener
+     * @param keyCode tecla acelerador (VK_F4, etc.)
+     * @return JMenuItem listo
+     */
+    private JMenuItem createMenuItem(String texto, ActionListener accion, int keyCode) {
+        JMenuItem item = new JMenuItem(texto);
+        item.setAccelerator(KeyStroke.getKeyStroke(keyCode, InputEvent.ALT_DOWN_MASK));
+        item.addActionListener(accion);
+        return item;
+    }
+
+    /**
+     * Cierra sesión: PrincipalFrame → LoginFrame. Limpia datos usuario +
+     * dispose ventana.
+     */
+    private void cerrarSesion() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "¿Cerrar sesión y volver al login?",
+                "Confirmar", JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            dispose();  // Cierra PrincipalFrame
+            new LoginFrame().setVisible(true);  // Reabre Login
+        }
     }
 
     /**

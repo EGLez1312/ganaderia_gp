@@ -23,7 +23,8 @@ import java.time.LocalDate;
  * Implementa listar, insertar, actualizar, eliminar y reincorporar ovejas con JTable + formulario.
  * Soporta filtro activo/bajas y doble-click para editar.
  * 
- * @author Sistema de Gestión Ganadera
+ * @author Elena González
+ * @version 1.0
  */
 public class OvejaPanel extends JPanel {
     
@@ -83,12 +84,16 @@ public class OvejaPanel extends JPanel {
 
         // Título
         JLabel lblTitulo = new JLabel("Gestión de Ovejas", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTitulo.setToolTipText("CRUD completo oveja");
         add(lblTitulo, BorderLayout.NORTH);
 
+        btnParto = new JButton("Registrar Parto");  // ← INSTANCIAR AQUÍ
+        btnParto.setEnabled(false);
+        btnParto.addActionListener(e -> registrarParto());
+
         // Panel superior: Botones
-        JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));  // ← spacing 5px
         JButton btnNuevo = new JButton("Nueva");
         btnNuevo.setMnemonic('N');
         btnNuevo.setToolTipText("Nueva oveja (Alt+N)");
@@ -127,17 +132,10 @@ public class OvejaPanel extends JPanel {
         pnlBotones.add(btnRecargar);
         pnlBotones.add(chkMostrarBajas);
         pnlBotones.add(btnReincorporar);
+        pnlBotones.add(btnParto); 
         btnReincorporar.setVisible(false);
         add(pnlBotones, BorderLayout.NORTH);
         
-        // Panel botón partos
-        JPanel pnlPartos = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        btnParto = new JButton("Registrar Parto");
-        btnParto.setEnabled(false);
-        btnParto.addActionListener(e -> registrarParto());
-        pnlPartos.add(btnParto);
-        add(pnlPartos, BorderLayout.PAGE_START);
-
         // Tabla central
         String[] columnas = {"ID", "Número", "Peso (kg)", "Raza", "Sexo", "Nacimiento", "Estado de salud"};
         model = new DefaultTableModel(columnas, 0);

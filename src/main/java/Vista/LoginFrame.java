@@ -55,8 +55,8 @@ public class LoginFrame extends JFrame {
         setLayout(new BorderLayout(20, 20));
 
         // Panel título
-        JLabel lblTitulo = new JLabel("Gestión de Rebaños Ovinos", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 24));
+        JLabel lblTitulo = new JLabel("Gestor de Rebaños Ovinos", SwingConstants.CENTER);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         add(lblTitulo, BorderLayout.NORTH);
 

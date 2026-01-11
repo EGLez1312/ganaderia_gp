@@ -14,6 +14,9 @@ import java.util.List;
 /**
  * DAO para operaciones CRUD de eventos relacionados con ovejas.
  * Gestiona la persistencia de eventos usando Hibernate con HibernateUtil.
+ * 
+ * @author Elena González
+ * @version 1.0
  */
 public class EventoDAO {
 

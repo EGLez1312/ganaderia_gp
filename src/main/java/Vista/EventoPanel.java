@@ -94,7 +94,7 @@ public class EventoPanel extends JPanel {
      */
     private void crearTitulo() {
         JLabel lblTitulo = new JLabel("Gestión de Eventos", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
         lblTitulo.setToolTipText("Partos con madre, vacunaciones, tratamientos y desparasitaciones");
         add(lblTitulo, BorderLayout.NORTH);
     }

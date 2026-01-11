@@ -196,7 +196,12 @@ public class OvejaDAO {
     }
 
     /**
+     * Lista hembras adultas listas para parto. Filtra ovejas activas con
+     * sexo='H' y peso_actual &gt; 30kg.
      *
+     * @return Lista no-nula de hembras adultas (&gt;30kg, activas)
+     * @see #listarSegunEstado(boolean)
+     * @since 2.0
      */
     public List<Oveja> listarHembrasAdultas() {
         // SQL: WHERE sexo='H' AND activo=true AND peso>30 ORDER BY numero

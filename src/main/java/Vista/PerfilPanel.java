@@ -66,14 +66,13 @@ public class PerfilPanel extends JPanel {
 
         // Título principal
         JLabel lblTitulo = new JLabel("Mi Perfil", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 22));
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitulo.setForeground(new Color(45, 85, 150));
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
         add(lblTitulo, BorderLayout.NORTH);
 
         // Formulario responsive
         JPanel pnlForm = new JPanel(new GridBagLayout());
-        pnlForm.setBackground(Color.WHITE);
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(12, 12, 12, 12);
         c.fill = GridBagConstraints.HORIZONTAL;
@@ -85,7 +84,7 @@ public class PerfilPanel extends JPanel {
         pnlForm.add(new JLabel("Username:"), c);
         c.gridx = 1;
         JLabel lblUsername = new JLabel(usuario.getUsername());
-        lblUsername.setFont(new Font("Arial", Font.ITALIC, 14));
+        lblUsername.setFont(new Font("Segoe UI", Font.ITALIC, 14));
         lblUsername.setForeground(Color.DARK_GRAY);
         lblUsername.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         pnlForm.add(lblUsername, c);
@@ -132,10 +131,10 @@ public class PerfilPanel extends JPanel {
         c.gridwidth = 2;
         c.insets = new Insets(25, 12, 12, 12);
         JButton btnGuardar = new JButton("Actualizar Perfil");
-        btnGuardar.setFont(new Font("Arial", Font.BOLD, 14));
+        btnGuardar.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnGuardar.setMnemonic('G');  // Alt+G
         btnGuardar.setBackground(new Color(50, 150, 50));
-        btnGuardar.setForeground(Color.WHITE);
+        btnGuardar.setForeground(Color.BLACK);
         btnGuardar.addActionListener(e -> guardarPerfil());
         pnlForm.add(btnGuardar, c);
 

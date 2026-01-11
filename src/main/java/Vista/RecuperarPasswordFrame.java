@@ -70,7 +70,7 @@ public class RecuperarPasswordFrame extends JFrame {
         c.gridwidth = 2;
         c.fill = GridBagConstraints.HORIZONTAL;
         JLabel lblIntro = new JLabel("Introduce tu email registrado:");
-        lblIntro.setFont(new Font("Arial", Font.BOLD, 14));
+        lblIntro.setFont(new Font("Segoe UI", Font.BOLD, 14));
         add(lblIntro, c);
 
         // Campo email

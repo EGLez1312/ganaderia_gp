@@ -5,6 +5,7 @@
 package App;
 
 import Vista.LoginFrame;
+import javax.swing.UIManager;
 
 /**
  * Punto de entrada de la aplicación de gestión ganadera.
@@ -13,7 +14,14 @@ import Vista.LoginFrame;
  * @version 1.0
  */
 public class App {
+
     public static void main(String[] args) {
+        try {
+            // Establece el aspecto nativo de Windows
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         javax.swing.SwingUtilities.invokeLater(() -> {
             new LoginFrame().setVisible(true);
         });

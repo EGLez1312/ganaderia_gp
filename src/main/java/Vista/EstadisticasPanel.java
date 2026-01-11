@@ -115,7 +115,7 @@ public class EstadisticasPanel extends JPanel {
         kpiLabels[5] = new JLabel("", SwingConstants.CENTER);
 
         for (JLabel label : kpiLabels) {
-            label.setFont(new Font("Arial", Font.BOLD, 14));
+            label.setFont(new Font("Segoe UI", Font.BOLD, 14));
             label.setOpaque(true);
             label.setBackground(new Color(100, 150, 255));
             label.setForeground(Color.WHITE);
