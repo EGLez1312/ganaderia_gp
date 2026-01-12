@@ -12,6 +12,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import Util.I18nUtil;
+import java.util.Locale;
 
 /**
  * Ventana principal de login de la aplicación de gestión ganadera.
@@ -23,14 +25,19 @@ import java.awt.event.KeyEvent;
 public class LoginFrame extends JFrame {
 
     private final UsuarioService usuarioService;
-
+    
     // Componentes
     private JTextField txtUsername;
     private JPasswordField txtPassword;
     private JButton btnAcceso;
     private JButton btnRegistro;
     private JButton btnRecuperar;
-    
+    private JLabel lblTitulo;
+    private JPanel pnlForm;
+    private JPanel pnlIdioma;
+    private JLabel lblUsuario;
+    private JLabel lblPassword;
+   
     // Gestión de ventanas hijas
     private RegistroFrame registroFrame;
     private RecuperarPasswordFrame recuperarFrame;
@@ -40,7 +47,11 @@ public class LoginFrame extends JFrame {
      */
     public LoginFrame() {
         this.usuarioService = new UsuarioService(new UsuarioDAO(), new PasswordEncoderUtil());
-        setTitle("Ganadería GP - Login");
+     
+        // Español por defecto
+        java.util.Locale.setDefault(new java.util.Locale("es", "ES"));
+
+        setTitle(I18nUtil.get("login.title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initComponents();
         pack();
@@ -55,39 +66,41 @@ public class LoginFrame extends JFrame {
         setLayout(new BorderLayout(20, 20));
 
         // Panel título
-        JLabel lblTitulo = new JLabel("Gestor de Rebaños Ovinos", SwingConstants.CENTER);
+        lblTitulo = new JLabel(I18nUtil.get("login.titulo"));
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         add(lblTitulo, BorderLayout.NORTH);
 
         // Panel formulario
-        JPanel pnlForm = new JPanel(new GridBagLayout());
+        pnlForm = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.anchor = GridBagConstraints.WEST;
 
         // Username
         gbc.gridx = 0; gbc.gridy = 0;
-        pnlForm.add(new JLabel("Usuario:"), gbc);
+        lblUsuario = new JLabel(I18nUtil.get("login.username"));
+        pnlForm.add(lblUsuario, gbc);
         gbc.gridx = 1;
         txtUsername = new JTextField(15);
-        txtUsername.setToolTipText("Introduce tu nombre de usuario");
+        txtUsername.setToolTipText(I18nUtil.get("login.tooltip.username"));
         pnlForm.add(txtUsername, gbc);
 
         // Password
         gbc.gridx = 0; gbc.gridy = 1;
-        pnlForm.add(new JLabel("Contraseña:"), gbc);
+        lblPassword = new JLabel(I18nUtil.get("login.password"));
+        pnlForm.add(lblPassword, gbc); 
         gbc.gridx = 1;
         txtPassword = new JPasswordField(15);
-        txtPassword.setToolTipText("Introduce tu contraseña");
+        txtPassword.setToolTipText(I18nUtil.get("login.tooltip.password"));
         pnlForm.add(txtPassword, gbc);
 
         // Botones
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
         JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        btnAcceso = new JButton("Acceder");
-        btnRegistro = new JButton("Registrarse");
-        btnRecuperar = new JButton("Recuperar contraseña");
+        btnAcceso = new JButton(I18nUtil.get("login.btn.acceder"));
+        btnRegistro = new JButton(I18nUtil.get("login.btn.registro")); 
+        btnRecuperar = new JButton(I18nUtil.get("login.btn.recuperar"));
 
         // Mnemónicos (Alt+A, Alt+R, Alt+C)
         btnAcceso.setMnemonic('A');
@@ -106,6 +119,27 @@ public class LoginFrame extends JFrame {
 
         // Listeners
         configurarListeners();
+
+        // Selector de idioma
+        pnlIdioma = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JComboBox<String> cmbIdioma = new JComboBox<>(new String[]{
+            "ES", "EN"
+        });
+        cmbIdioma.setSelectedIndex(0);  // Español por defecto
+        cmbIdioma.addActionListener(e -> {
+            String lang = (String) cmbIdioma.getSelectedItem();  // "ES"/"EN"
+            I18nUtil.setLocale(lang.toLowerCase());  // Cambia locale interno
+
+            // RECARGA TODA LA UI
+            updateAllTexts();  // PrincipalFrame.updateAllTexts()
+        });
+
+        pnlIdioma.add(new JLabel("Idioma:"));
+        pnlIdioma.add(cmbIdioma);
+
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        pnlForm.add(pnlIdioma, gbc);
     }
 
     /**
@@ -149,18 +183,18 @@ public class LoginFrame extends JFrame {
         String password = new String(txtPassword.getPassword()).trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Usuario y contraseña obligatorios", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, I18nUtil.get("login.error.empty"));
             return;
         }
 
         Usuario usuario = usuarioService.login(username, password);
         if (usuario != null) {
-            JOptionPane.showMessageDialog(this, "¡Bienvenido " + usuario.getNombre() + "!");
-            // Abrir ventana principal
+            String mensaje = I18nUtil.get("login.success").replace("{0}", usuario.getNombre());
+            JOptionPane.showMessageDialog(this, mensaje);
             new PrincipalFrame(usuario).setVisible(true);
             dispose();
         } else {
-            JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Login fallido", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,I18nUtil.get("login.error.invalid"));
             txtPassword.setText("");
             txtUsername.requestFocus();
         }
@@ -176,6 +210,8 @@ public class LoginFrame extends JFrame {
         } else {
             registroFrame.toFront();
         }
+
+        registroFrame.updateAllTexts();
     }
 
     /**
@@ -188,6 +224,8 @@ public class LoginFrame extends JFrame {
         } else {
             recuperarFrame.toFront();
         }
+        
+        recuperarFrame.updateAllTexts();
     }
 
     /**
@@ -224,5 +262,25 @@ public class LoginFrame extends JFrame {
      */
     public void setTxtPassword(JPasswordField txtPassword) {
         this.txtPassword = txtPassword;
+    }
+    
+    /**
+     * Actualiza todos los textos de la interfaz según el idioma actual
+     * 
+     */
+    private void updateAllTexts() {
+        lblTitulo.setText(I18nUtil.get("login.titulo"));
+        lblUsuario.setText(I18nUtil.get("login.username"));
+        lblPassword.setText(I18nUtil.get("login.password"));
+        btnAcceso.setText(I18nUtil.get("login.btn.acceder"));
+        btnRegistro.setText(I18nUtil.get("login.btn.registro"));
+        btnRecuperar.setText(I18nUtil.get("login.btn.recuperar"));
+
+        // Tooltips
+        txtUsername.setToolTipText(I18nUtil.get("login.tooltip.username"));
+        txtPassword.setToolTipText(I18nUtil.get("login.tooltip.password"));
+
+        // Idioma label (ajusta índice 0):
+        // ((JLabel)pnlIdioma.getComponent(0)).setText(I18nUtil.get("idioma.selector"));
     }
 }

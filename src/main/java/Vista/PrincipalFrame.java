@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import Util.I18nUtil;
+import java.util.Locale;
 
 /**
  * Ventana principal post-login con 4 paneles dinámicos obligatorios.
@@ -24,21 +26,25 @@ public class PrincipalFrame extends JFrame {
     private final Usuario usuarioLogueado;
     private JTabbedPane tabbedPane;
     private JLabel lblStatus;
+    private JMenuBar menuBar;
     
     // Paneles de las 4 pestañas obligatorias
     private OvejaPanel ovejasPanel;
     private EventoPanel eventosPanel;
     private EstadisticasPanel statsPanel;
     private PerfilPanel perfilPanel;
+    private JPanel pnlIdioma;
+    private JComboBox<String> cmbIdioma;
 
     /**
      * Constructor principal. Inicializa interfaz con usuario logueado.
-     * 
+     *
      * @param usuario usuario autenticado desde LoginFrame.
      */
     public PrincipalFrame(Usuario usuario) {
         this.usuarioLogueado = usuario;
         initComponents();
+        updateAllTexts();
         setLocationRelativeTo(null);
     }
 
@@ -48,7 +54,8 @@ public class PrincipalFrame extends JFrame {
      */
     private void initComponents() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setTitle("Ganadería GP v2.0 - Bienvenido " + usuarioLogueado.getUsername());
+        setTitle(String.format(I18nUtil.get("principal.title"),
+                usuarioLogueado.getUsername()));
         setMinimumSize(new Dimension(1000, 700));
         setLayout(new BorderLayout(5, 5));
 
@@ -58,24 +65,24 @@ public class PrincipalFrame extends JFrame {
 
         // 2. Panel central: 4 pestañas dinámicas obligatorias
         tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-        tabbedPane.setToolTipText("Ctrl+Tab para navegar | Alt+1,2,3,4 desde menú");
+        tabbedPane.setToolTipText(I18nUtil.get("principal.status.tooltip"));
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         
         // Pestaña 1: Ovejas (CRUD completo)
         ovejasPanel = new OvejaPanel(usuarioLogueado);
-        tabbedPane.addTab("Ovejas", ovejasPanel);
+        tabbedPane.addTab(I18nUtil.get("principal.tab.ovejas"), ovejasPanel);
         
         // Pestaña 2: Eventos (partos, tratamientos)
         eventosPanel = new EventoPanel(usuarioLogueado);
-        tabbedPane.addTab("Eventos", eventosPanel);
+        tabbedPane.addTab(I18nUtil.get("principal.tab.eventos"), eventosPanel);
         
         // Pestaña 3: Estadísticas (KPIs y gráficos)
         statsPanel = new EstadisticasPanel();
-        tabbedPane.addTab("Estadísticas", statsPanel);
+        tabbedPane.addTab(I18nUtil.get("principal.tab.stats"), statsPanel);
         
         // Pestaña 4: Perfil usuario
         perfilPanel = new PerfilPanel(usuarioLogueado);
-        tabbedPane.addTab("Perfil Usuario", perfilPanel);
+        tabbedPane.addTab(I18nUtil.get("principal.tab.perfil"), perfilPanel);
         
         add(tabbedPane, BorderLayout.CENTER);
 
@@ -84,8 +91,15 @@ public class PrincipalFrame extends JFrame {
         statusBar.setBorder(BorderFactory.createLoweredBevelBorder());
         statusBar.setPreferredSize(new Dimension(0, 25));
         
-        JLabel lblUsuario = new JLabel("Usuario: " + usuarioLogueado.getUsername(), JLabel.LEFT);
-        lblStatus = new JLabel("Listo | Pestaña activa: " + tabbedPane.getTitleAt(0), JLabel.RIGHT);
+        JLabel lblUsuario = new JLabel(
+                I18nUtil.get("principal.status.usuario").replace("{0}", usuarioLogueado.getUsername()),
+                JLabel.LEFT
+        );
+
+        lblStatus = new JLabel(
+                I18nUtil.get("principal.status.active").replace("{0}", tabbedPane.getTitleAt(0)),
+                JLabel.RIGHT
+        );
         
         statusBar.add(lblUsuario, BorderLayout.WEST);
         statusBar.add(lblStatus, BorderLayout.EAST);
@@ -110,23 +124,40 @@ public class PrincipalFrame extends JFrame {
      * navegación + derecha sistema.
      */
     private JMenuBar crearMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
+        menuBar = new JMenuBar();
 
-        menuBar.add(crearMenuConMnemonic("Ovejas", 'O', e -> tabbedPane.setSelectedIndex(0)));
-        menuBar.add(crearMenuConMnemonic("Eventos", 'E', e -> tabbedPane.setSelectedIndex(1)));
-        menuBar.add(crearMenuConMnemonic("Estadísticas", 'S', e -> tabbedPane.setSelectedIndex(2)));
-        menuBar.add(crearMenuConMnemonic("Perfil", 'P', e -> tabbedPane.setSelectedIndex(3)));
+        menuBar.add(crearMenuConMnemonic(I18nUtil.get("principal.menu.ovejas"), 'O', e -> tabbedPane.setSelectedIndex(0)));
+        menuBar.add(crearMenuConMnemonic(I18nUtil.get("principal.menu.eventos"), 'E', e -> tabbedPane.setSelectedIndex(1)));
+        menuBar.add(crearMenuConMnemonic(I18nUtil.get("principal.menu.stats"), 'S', e -> tabbedPane.setSelectedIndex(2)));
+        menuBar.add(crearMenuConMnemonic(I18nUtil.get("principal.menu.perfil"), 'P', e -> tabbedPane.setSelectedIndex(3)));
 
-        JMenu mnSistema = new JMenu("Sistema");
+        JMenu mnSistema = new JMenu(I18nUtil.get("principal.menu.sistema"));
         mnSistema.setMnemonic('I');
 
-        JMenuItem itemCerrar = new JMenuItem("Cerrar sesión");
+        JMenuItem itemCerrar = new JMenuItem(I18nUtil.get("principal.menu.cerrar"));
         itemCerrar.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, ActionEvent.ALT_MASK));
         itemCerrar.addActionListener(e -> cerrarSesion());
 
-        JMenuItem itemAcerca = new JMenuItem("Acerca de...");
+        JMenuItem itemAcerca = new JMenuItem(I18nUtil.get("principal.menu.acerca"));
         itemAcerca.setMnemonic('A');
         itemAcerca.addActionListener(e -> mostrarAcerca());
+        
+        // Cambio de idioma
+        pnlIdioma = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
+        JLabel lblIdioma = new JLabel(I18nUtil.get("idioma.selector"));
+        cmbIdioma = new JComboBox<>(new String[]{"ES", "EN"});
+        cmbIdioma.addActionListener(e -> {
+            String lang = (String) cmbIdioma.getSelectedItem();  // "ES"/"EN"
+            I18nUtil.setLocale(lang.toLowerCase());  // Cambia locale interno
+
+            // RECARGA TODA LA UI
+            updateAllTexts();  // PrincipalFrame.updateAllTexts()
+        });
+
+
+        pnlIdioma.add(lblIdioma);
+        pnlIdioma.add(cmbIdioma);
+        menuBar.add(pnlIdioma);
 
         mnSistema.add(itemCerrar);
         mnSistema.addSeparator(); 
@@ -164,7 +195,7 @@ public class PrincipalFrame extends JFrame {
             String titulo = tabbedPane.getTitleAt(index);
 
             // Actualiza la barra de estado inferior dinámicamente
-            if (lblStatus != null) {
+              if (lblStatus != null) {
                 lblStatus.setText("Listo | Pestaña activa: " + titulo);
             }
 
@@ -195,11 +226,8 @@ public class PrincipalFrame extends JFrame {
      */
     private void mostrarAcerca() {
         JOptionPane.showMessageDialog(this,
-            "Ganadería GP v2.0\n\n" +
-            "Desarrollo Interfaces - Elena González\n" +
-            "Hibernate + Swing + Maven\n" +
-            "2026 © Todos los derechos reservados",
-            "Acerca de Ganadería GP", JOptionPane.INFORMATION_MESSAGE);
+                String.format(I18nUtil.get("principal.dialog.acerca"), "Elena González"),
+                I18nUtil.get("principal.menu.acerca"), JOptionPane.INFORMATION_MESSAGE);
     }
     
     /**
@@ -223,13 +251,61 @@ public class PrincipalFrame extends JFrame {
      */
     private void cerrarSesion() {
         int confirm = JOptionPane.showConfirmDialog(this,
-                "¿Cerrar sesión y volver al login?",
-                "Confirmar", JOptionPane.YES_NO_OPTION);
+                I18nUtil.get("principal.dialog.cerrar"),
+                I18nUtil.get("principal.confirm.yesno"), JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
             dispose();  // Cierra PrincipalFrame
             new LoginFrame().setVisible(true);  // Reabre Login
         }
+    }
+
+    /**
+     * Actualiza TODOS textos i18n al cambiar idioma.
+     */
+    private void updateAllTexts() {
+        // Pestañas
+        if (tabbedPane != null && tabbedPane.getTabCount() > 0) {
+            tabbedPane.setTitleAt(0, I18nUtil.get("principal.tab.ovejas"));
+            tabbedPane.setTitleAt(1, I18nUtil.get("principal.tab.eventos"));
+            tabbedPane.setTitleAt(2, I18nUtil.get("principal.tab.stats"));
+            tabbedPane.setTitleAt(3, I18nUtil.get("principal.tab.perfil"));
+        }
+
+        // Panel idioma
+        if (pnlIdioma != null && pnlIdioma.getComponentCount() > 0) {
+            ((JLabel) pnlIdioma.getComponent(0)).setText(I18nUtil.get("idioma.selector"));
+        }
+
+        // MenúBar principal
+        if (menuBar != null) {
+            menuBar.getMenu(0).setText(I18nUtil.get("principal.menu.ovejas"));
+            menuBar.getMenu(1).setText(I18nUtil.get("principal.menu.eventos"));
+            menuBar.getMenu(2).setText(I18nUtil.get("principal.menu.stats"));
+            menuBar.getMenu(3).setText(I18nUtil.get("principal.menu.perfil"));
+
+            // Menú Sistema 
+            menuBar.getMenu(5).setText(I18nUtil.get("principal.menu.sistema"));
+            menuBar.getMenu(5).getItem(0).setText(I18nUtil.get("principal.menu.cerrar")); 
+            menuBar.getMenu(5).getItem(2).setText(I18nUtil.get("principal.menu.acerca")); 
+        }
+
+        // Panels HIJOS
+        if (ovejasPanel != null) {
+            ovejasPanel.updateAllTexts();
+        }
+        if (eventosPanel != null) {
+            eventosPanel.updateAllTexts();
+        }
+        if (statsPanel != null) {
+            statsPanel.updateAllTexts();
+        }
+        if (perfilPanel != null) {
+            perfilPanel.updateAllTexts();
+        }
+
+        revalidate();
+        repaint();
     }
 
     /**

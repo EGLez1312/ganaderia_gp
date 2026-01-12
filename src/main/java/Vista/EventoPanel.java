@@ -15,6 +15,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
 import com.toedter.calendar.JDateChooser;
+import Util.I18nUtil;
 
 /**
  * Panel CRUD completo para gestión de eventos de ovejas.
@@ -93,9 +94,9 @@ public class EventoPanel extends JPanel {
      * Crea título principal con emoji y ToolTip informativo.
      */
     private void crearTitulo() {
-        JLabel lblTitulo = new JLabel("Gestión de Eventos", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel(I18nUtil.get("evento.title"), SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        lblTitulo.setToolTipText("Partos con madre, vacunaciones, tratamientos y desparasitaciones");
+        lblTitulo.setToolTipText(I18nUtil.get("evento.tooltip.title"));
         add(lblTitulo, BorderLayout.NORTH);
     }
     
@@ -105,21 +106,21 @@ public class EventoPanel extends JPanel {
     private void crearBarraBotones() {
         JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.LEFT));
         
-        JButton btnNuevo = new JButton("Nuevo Evento");
+        JButton btnNuevo = new JButton(I18nUtil.get("evento.btn.nuevo"));
         btnNuevo.setMnemonic('N');
         btnNuevo.setToolTipText("Nuevo evento (Alt+N)");
         btnNuevo.addActionListener(e -> nuevoEvento());
         
-        JButton btnGuardar = new JButton("Registrar");
+        JButton btnGuardar = new JButton(I18nUtil.get("evento.btn.guardar"));
         btnGuardar.setMnemonic('G');
         btnGuardar.setToolTipText("Guardar evento seleccionado (Alt+G)");
         btnGuardar.addActionListener(e -> guardarEvento());
         
-        JButton btnEliminar = new JButton("Eliminar");
+        JButton btnEliminar = new JButton(I18nUtil.get("evento.btn.eliminar"));
         btnEliminar.setMnemonic('E');
         btnEliminar.addActionListener(e -> eliminarEvento());
         
-        JButton btnRecargar = new JButton("Recargar");
+        JButton btnRecargar = new JButton(I18nUtil.get("evento.btn.recargar"));
         btnRecargar.setMnemonic('R');
         btnRecargar.addActionListener(e -> recargarTodo());
         
@@ -128,7 +129,8 @@ public class EventoPanel extends JPanel {
         pnlBotones.add(btnGuardar);
         pnlBotones.add(btnEliminar);
         pnlBotones.add(btnRecargar);
-        pnlBotones.add(new JLabel("Buscar oveja:"));
+        pnlBotones.add(new JLabel(I18nUtil.get("evento.lbl.buscar")));
+        txtBuscarOveja.setToolTipText(I18nUtil.get("evento.tooltip.buscar"));
         pnlBotones.add(txtBuscarOveja);
         
         add(pnlBotones, BorderLayout.NORTH);
@@ -142,7 +144,7 @@ public class EventoPanel extends JPanel {
      */
     private JTextField crearCampoBusqueda() {
         JTextField txtBuscarOveja = new JTextField(8);
-        txtBuscarOveja.setToolTipText("Escribe parte del crotal para filtrar ovejas");
+        txtBuscarOveja.setToolTipText(I18nUtil.get("evento.tooltip.buscar"));
         txtBuscarOveja.addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
             public void keyReleased(java.awt.event.KeyEvent e) {
@@ -170,10 +172,16 @@ public class EventoPanel extends JPanel {
      * Crea tabla con columnas fijas y ToolTip para selección.
      */
     private void crearTablaEventos() {
-        String[] columnas = {"ID", "Oveja", "Tipo", "Fecha", "Observaciones"};
+        String[] columnas = {
+            I18nUtil.get("evento.col.id"),
+            I18nUtil.get("evento.col.oveja"),
+            I18nUtil.get("evento.col.tipo"),
+            I18nUtil.get("evento.col.fecha"),
+            I18nUtil.get("evento.col.obs")
+        };
         model = new DefaultTableModel(columnas, 0);
         tblEventos = new JTable(model);
-        tblEventos.setToolTipText("Doble-click para detalles del evento");
+        tblEventos.setToolTipText(I18nUtil.get("evento.tooltip.tabla"));
         add(new JScrollPane(tblEventos), BorderLayout.CENTER);
     }
     
@@ -189,25 +197,28 @@ public class EventoPanel extends JPanel {
         
         // Fila 0: Oveja
         c.gridx = 0; c.gridy = 0;
-        pnlForm.add(new JLabel("Oveja:"), c);
+        pnlForm.add(new JLabel(I18nUtil.get("evento.lbl.oveja")), c);
         c.gridx = 1;
         cmbOveja = new JComboBox<>();
-        cmbOveja.setToolTipText("Oveja afectada por el evento");
+        cmbOveja.setToolTipText(I18nUtil.get("evento.tooltip.oveja"));
         pnlForm.add(cmbOveja, c);
         
         // Fila 1: Tipo (controla visibilidad Madre)
         c.gridx = 0; c.gridy = 1;
-        pnlForm.add(new JLabel("Tipo:"), c);
+        pnlForm.add(new JLabel(I18nUtil.get("evento.lbl.tipo")), c);
         c.gridx = 1;
         cmbTipo = new JComboBox<>(new String[]{
-            "Vacunación", "Tratamiento", "Desparasitación", "Otro"
+            I18nUtil.get("evento.tipo.vacunacion"),
+            I18nUtil.get("evento.tipo.tratamiento"),
+            I18nUtil.get("evento.tipo.desparasitacion"),
+            I18nUtil.get("evento.tipo.otro")
         });
-        cmbTipo.setToolTipText("Tipo de evento veterinario/ganadero");
+        cmbTipo.setToolTipText(I18nUtil.get("evento.tooltip.tipo"));
         pnlForm.add(cmbTipo, c);
         
         // Fila 2: Fecha
         c.gridx = 0; c.gridy = 2;
-        pnlForm.add(new JLabel("Fecha:"), c);
+        pnlForm.add(new JLabel(I18nUtil.get("evento.lbl.fecha")), c);
         c.gridx = 1;
         jdFecha = new JDateChooser();
         jdFecha.setDateFormatString("dd/MM/yyyy");
@@ -216,10 +227,10 @@ public class EventoPanel extends JPanel {
              
         // Fila 4: Observaciones
         c.gridx = 0; c.gridy = 4;
-        pnlForm.add(new JLabel("Observaciones:"), c);
+        pnlForm.add(new JLabel(I18nUtil.get("evento.lbl.obs")), c);
         c.gridx = 1;
         txtObservaciones = new JTextField(20);
-        txtObservaciones.setToolTipText("Detalles: dosis, veterinario, complicaciones...");
+        txtObservaciones.setToolTipText(I18nUtil.get("evento.tooltip.obs"));
         pnlForm.add(txtObservaciones, c);
 
         add(pnlForm, BorderLayout.SOUTH);
@@ -238,7 +249,8 @@ public class EventoPanel extends JPanel {
                 cmbOveja.addItem(o.getNumeroIdentificacion() + " - " + o.getRaza());
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error cargando ovejas: " + e.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    String.format(I18nUtil.get("evento.error.ovejas"), e.getMessage()));
         }
     }
     
@@ -260,7 +272,8 @@ public class EventoPanel extends JPanel {
                 });
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error cargando eventos: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    String.format(I18nUtil.get("evento.error.eventos"), ex.getMessage()));
         }
     }
     
@@ -292,7 +305,7 @@ public class EventoPanel extends JPanel {
     private void guardarEvento() {
         try {
             if (cmbOveja.getSelectedIndex() == -1 || cmbOveja.getItemCount() == 0) {
-                JOptionPane.showMessageDialog(this, "Selecciona oveja del rebaño activo");
+                JOptionPane.showMessageDialog(this, I18nUtil.get("evento.error.selecciona_oveja"));
                 return;
             }
             
@@ -303,7 +316,7 @@ public class EventoPanel extends JPanel {
             
             java.util.Date date = jdFecha.getDate();
             if (date == null) {
-                JOptionPane.showMessageDialog(this, "Selecciona fecha");
+                JOptionPane.showMessageDialog(this, I18nUtil.get("evento.error.selecciona_fecha"));
                 return;
             }
             LocalDate localDate = date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
@@ -311,13 +324,14 @@ public class EventoPanel extends JPanel {
             evento.setObservaciones(txtObservaciones.getText());
             
             eventoDAO.insertar(evento);
-            JOptionPane.showMessageDialog(this, "Evento registrado correctamente");
+            JOptionPane.showMessageDialog(this, I18nUtil.get("evento.success.registrar"));
             recargarTodo();
             nuevoEvento();
-            
+
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error guardando: " + e.getMessage(), 
-                "Error BD", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    String.format(I18nUtil.get("evento.error.guardar"), e.getMessage()),
+                    I18nUtil.get("evento.error.guardar"), JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -328,22 +342,23 @@ public class EventoPanel extends JPanel {
     private void eliminarEvento() {
         int fila = tblEventos.getSelectedRow();
         if (fila == -1) {
-            JOptionPane.showMessageDialog(this, "Selecciona evento de la tabla");
+            JOptionPane.showMessageDialog(this, I18nUtil.get("evento.error.selecciona_evento"));
             return;
         }
-        
+     
         int id = (Integer) model.getValueAt(fila, 0);
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "¿Eliminar evento ID " + id + " permanentemente?", 
-            "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this,
+                String.format(I18nUtil.get("evento.confirm.eliminar"), id),
+                I18nUtil.get("evento.confirm.eliminar.title"), JOptionPane.YES_NO_OPTION);
         
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 eventoDAO.eliminar(id);
                 cargarEventos();
-                JOptionPane.showMessageDialog(this, "Evento eliminado");
+                JOptionPane.showMessageDialog(this, I18nUtil.get("evento.success.eliminar"));
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error eliminando: " + e.getMessage());
+                JOptionPane.showMessageDialog(this,
+                        String.format(I18nUtil.get("evento.error.eliminar"), e.getMessage()));
             }
         }
     }
@@ -362,4 +377,52 @@ public class EventoPanel extends JPanel {
             @Override public void ancestorMoved(javax.swing.event.AncestorEvent event) {}
         });
     }
+
+    /**
+     * Actualiza TODOS los textos i18n del panel según locale actual.
+     */
+    protected void updateAllTexts() {
+        // Título
+        if (getComponentCount() > 0 && getComponent(0) instanceof JLabel) {
+            ((JLabel) getComponent(0)).setText(I18nUtil.get("evento.title"));
+        }
+
+        // Botones
+        if (getComponentCount() > 1 && getComponent(1) instanceof JPanel) {
+            JPanel pnlBotones = (JPanel) getComponent(1);
+            Component[] botones = pnlBotones.getComponents();
+            if (botones.length >= 6) {
+                ((JButton) botones[0]).setText(I18nUtil.get("evento.btn.nuevo"));
+                ((JButton) botones[1]).setText(I18nUtil.get("evento.btn.guardar"));
+                ((JButton) botones[2]).setText(I18nUtil.get("evento.btn.eliminar"));
+                ((JButton) botones[3]).setText(I18nUtil.get("evento.btn.recargar"));
+                ((JLabel) botones[4]).setText(I18nUtil.get("evento.lbl.buscar"));
+            }
+        }
+
+        // Tabla columnas
+        if (model != null) {
+            model.setColumnIdentifiers(new String[]{
+                I18nUtil.get("evento.col.id"), I18nUtil.get("evento.col.oveja"),
+                I18nUtil.get("evento.col.tipo"), I18nUtil.get("evento.col.fecha"),
+                I18nUtil.get("evento.col.obs")
+            });
+        }
+
+        // Formulario
+        if (getComponentCount() > 2 && getComponent(2) instanceof JPanel) {
+            JPanel pnlForm = (JPanel) getComponent(2);
+            Component[] formComps = pnlForm.getComponents();
+            if (formComps.length >= 12) {
+                ((JLabel) formComps[0]).setText(I18nUtil.get("evento.lbl.oveja"));
+                ((JLabel) formComps[2]).setText(I18nUtil.get("evento.lbl.tipo"));
+                ((JLabel) formComps[4]).setText(I18nUtil.get("evento.lbl.fecha"));
+                ((JLabel) formComps[8]).setText(I18nUtil.get("evento.lbl.obs"));
+            }
+        }
+
+        revalidate();
+        repaint();
+    }
+
 }

@@ -35,6 +35,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.time.format.DateTimeFormatter;
 import org.jfree.chart.plot.PlotOrientation;
+import Util.I18nUtil;
 
 
 /**
@@ -102,16 +103,16 @@ public class EstadisticasPanel extends JPanel {
         // Título principal
         c.gridy = 1; c.gridwidth = 2;
         JPanel kpiContainer = new JPanel(new BorderLayout(10, 10));
-        kpiContainer.setBorder(BorderFactory.createTitledBorder("KPIs Principales"));
+        kpiContainer.setBorder(BorderFactory.createTitledBorder(I18nUtil.get("estadistica.border.kpis")));
 
         this.kpiLabels = new JLabel[6];
         kpiPanel = new JPanel(new GridLayout(3, 2, 10, 10));
 
-        kpiLabels[0] = new JLabel("Ovejas Totales: --", SwingConstants.CENTER);
-        kpiLabels[1] = new JLabel("Eventos Mes: --", SwingConstants.CENTER);
-        kpiLabels[2] = new JLabel("Peso Medio: --", SwingConstants.CENTER);
-        kpiLabels[3] = new JLabel("Hembras: --", SwingConstants.CENTER);
-        kpiLabels[4] = new JLabel("Activas: --", SwingConstants.CENTER);
+        kpiLabels[0] = new JLabel(I18nUtil.get("estadistica.kpi.total", "--"), SwingConstants.CENTER);
+        kpiLabels[1] = new JLabel(String.format(I18nUtil.get("estadistica.kpi.eventos"), "--"), SwingConstants.CENTER);
+        kpiLabels[2] = new JLabel(String.format(I18nUtil.get("estadistica.kpi.peso"), "--"), SwingConstants.CENTER);
+        kpiLabels[3] = new JLabel(String.format(I18nUtil.get("estadistica.kpi.hembras"), "--"), SwingConstants.CENTER);
+        kpiLabels[4] = new JLabel(String.format(I18nUtil.get("estadistica.kpi.activas"), "--", "--"), SwingConstants.CENTER);
         kpiLabels[5] = new JLabel("", SwingConstants.CENTER);
 
         for (JLabel label : kpiLabels) {
@@ -126,12 +127,12 @@ public class EstadisticasPanel extends JPanel {
 
         // Botón refrescar datos
         JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
-        JButton btnActualizar = new JButton("🔄 Actualizar");
+        JButton btnActualizar = new JButton(I18nUtil.get("estadistica.btn.actualizar"));
         btnActualizar.setMnemonic('A');
         btnActualizar.addActionListener(e -> actualizarEstadisticas());
         
         // Botón exportar a PDF
-        JButton btnPDF = new JButton("📄 PDF Exportar");
+        JButton btnPDF = new JButton(I18nUtil.get("estadistica.btn.pdf"));
         btnPDF.setMnemonic('P');
         btnPDF.addActionListener(e -> exportarPDF());
 
@@ -145,7 +146,7 @@ public class EstadisticasPanel extends JPanel {
         // Contenedor de gráficos
         c.gridy = 2; c.gridwidth = 2; c.weightx = 1.0; c.weighty = 1.0;
         chartPanelContainer = new JPanel(new GridLayout(1, 3, 10, 10));  
-        chartPanelContainer.setBorder(BorderFactory.createTitledBorder("Gráficos"));
+        chartPanelContainer.setBorder(BorderFactory.createTitledBorder(I18nUtil.get("estadistica.border.graficos")));
         add(chartPanelContainer, c);
     }
 
@@ -162,11 +163,11 @@ public class EstadisticasPanel extends JPanel {
             List<Oveja> ovejas = ovejaDAO.listarTodas();
            
             // Actualizar KPIs usando acceso directo a componentes
-            kpiLabels[0].setText("Ovejas Totales: " + contarTotal()); 
-            kpiLabels[1].setText("Eventos Mes: " + calcularEventosMes());
-            kpiLabels[2].setText("Peso Medio: " + String.format("%.1f kg", calcularPesoMedio(ovejas)));
-            kpiLabels[3].setText("Hembras: " + contarHembras(ovejas));
-            kpiLabels[4].setText("Activas: " + contarActivas() + "/" + contarTotal());
+            kpiLabels[0].setText(String.format(I18nUtil.get("estadistica.kpi.total"), contarTotal()));
+            kpiLabels[1].setText(String.format(I18nUtil.get("estadistica.kpi.eventos"), calcularEventosMes()));
+            kpiLabels[2].setText(String.format(I18nUtil.get("estadistica.kpi.peso"), String.format("%.1f", calcularPesoMedio(ovejas))));
+            kpiLabels[3].setText(String.format(I18nUtil.get("estadistica.kpi.hembras"), contarHembras(ovejas)));
+            kpiLabels[4].setText(String.format(I18nUtil.get("estadistica.kpi.activas"), contarActivas(), contarTotal()));
 
             // Actualizar Gráficos
             chartPanelContainer.removeAll();
@@ -178,7 +179,9 @@ public class EstadisticasPanel extends JPanel {
             chartPanelContainer.repaint();
             
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error cargando estadísticas: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    String.format(I18nUtil.get("estadistica.stats.error"), e.getMessage()),
+                    I18nUtil.get("estadistica.stats.error"), JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -215,11 +218,11 @@ public class EstadisticasPanel extends JPanel {
         long hembras = ovejas.stream().filter(o -> "H".equals(o.getSexo())).count();
         long machos = ovejas.size() - hembras;
 
-        dataset.setValue("Hembras (" + hembras + ")", hembras);
-        dataset.setValue("Machos (" + machos + ")", machos);
+        dataset.setValue(I18nUtil.get("estadistica.grafico.sexo.hembras") + " (" + hembras + ")", hembras);
+        dataset.setValue(I18nUtil.get("estadistica.grafico.sexo.machos") + " (" + machos + ")", machos);
 
-        JFreeChart chart = ChartFactory.createPieChart(
-            "Distribución por Sexo", dataset, true, true, false);
+        JFreeChart chart = ChartFactory.createPieChart(I18nUtil.get("estadistica.grafico.sexo.title"), 
+                dataset, true, true, false);
         return new ChartPanel(chart);
     }
 
@@ -237,11 +240,14 @@ public class EstadisticasPanel extends JPanel {
                 .collect(Collectors.groupingBy(Oveja::getRaza, Collectors.counting()));
 
         conteoRazas.forEach((raza, cantidad) -> {
-            dataset.addValue(cantidad, "Ovejas", raza);
+            dataset.addValue(cantidad, I18nUtil.get("estadistica.grafico.razas.ovejas"), raza);
         });
 
         JFreeChart chart = ChartFactory.createBarChart(
-            "Ovejas por Raza", "Raza", "Cantidad", dataset);
+                I18nUtil.get("estadistica.grafico.razas.title"),
+                I18nUtil.get("estadistica.grafico.razas.raza"),
+                I18nUtil.get("estadistica.grafico.razas.cantidad"),
+                dataset);
         return new ChartPanel(chart);
     }
 
@@ -267,10 +273,11 @@ public class EstadisticasPanel extends JPanel {
         DefaultPieDataset dataset = new DefaultPieDataset();
         long activas = contarActivas();
         long total = contarTotal();
-        dataset.setValue("Activas (" + activas + ")", activas);
-        dataset.setValue("Inactivas (" + (total - activas) + ")", total - activas);
+        dataset.setValue(I18nUtil.get("estadistica.grafico.activas.label.activas") + " (" + activas + ")", activas);
+        dataset.setValue(I18nUtil.get("estadistica.grafico.activas.label.inactivas") + " (" + (total - activas) + ")", total - activas);
 
-        return new ChartPanel(ChartFactory.createPieChart("Estado Rebaño", dataset, true, true, false));
+        return new ChartPanel(ChartFactory.createPieChart(I18nUtil.get("estadistica.grafico.activas.title"), 
+                dataset, true, true, false));
     }
 
     /**
@@ -318,9 +325,9 @@ public class EstadisticasPanel extends JPanel {
      */
     private void exportarPDF() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Guardar Informe PDF");
-        chooser.setSelectedFile(new File("Informe_Rebaño_"
-                + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".pdf"));
+        chooser.setDialogTitle(I18nUtil.get("estadistica.chooser.title"));
+        chooser.setSelectedFile(new File(String.format(I18nUtil.get("estadistica.chooser.filename"),
+                LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")))));
 
         if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
@@ -339,122 +346,164 @@ public class EstadisticasPanel extends JPanel {
             // PÁGINA 1: KPIs + SEXO
             PDPage page1 = new PDPage(PDRectangle.A4);
             doc.addPage(page1);
-
             try (PDPageContentStream cs1 = new PDPageContentStream(doc, page1)) {
                 // HEADER
                 cs1.beginText();
-                cs1.setFont(PDType1Font.HELVETICA_BOLD, 15);
-                cs1.newLineAtOffset(50, 800);
-                cs1.showText("INFORME DE ESTADISTICAS DE LA GANADERÍA GORJÓN-PASCUA");
+                cs1.setFont(PDType1Font.HELVETICA_BOLD, 16);
+                cs1.newLineAtOffset(50, 780);
+                cs1.showText(I18nUtil.get("estadistica.pdf.header1"));
                 cs1.endText();
 
                 // FECHA
                 cs1.beginText();
-                cs1.setFont(PDType1Font.HELVETICA, 9);
-                cs1.newLineAtOffset(50, 785);
-                cs1.showText("Fecha: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-                cs1.endText();
+                cs1.setFont(PDType1Font.HELVETICA, 10);
+                cs1.newLineAtOffset(50, 760);
+                cs1.showText(I18nUtil.get("estadistica.pdf.fecha") + ": "
+                        + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+                cs1.endText(); 
 
                 // KPIs
                 cs1.beginText();
-                cs1.setFont(PDType1Font.HELVETICA_BOLD, 10);
-                cs1.newLineAtOffset(50, 770);
-                cs1.showText("TOTAL:" + total + " ACT:" + activas + "(" + String.format("%.0f%%", activas * 100.0 / total)
-                        + ") H:" + contarHembras(ovejas) + " PESO:" + String.format("%.1fkg", calcularPesoMedio(ovejas))
-                        + " EVT:" + calcularEventosMes());
-                cs1.endText();
+                cs1.setFont(PDType1Font.HELVETICA_BOLD, 11);
+                cs1.newLineAtOffset(50, 740);
+                cs1.showText(I18nUtil.get("estadistica.pdf.kpis"));
+                cs1.endText(); 
 
-                // TITULO GRAFICO
+                // TÍTULO GRÁFICO
                 cs1.beginText();
-                cs1.setFont(PDType1Font.HELVETICA_BOLD, 12);
-                cs1.newLineAtOffset(200, 750);
-                cs1.showText("DISTRIBUCION POR SEXO");
+                cs1.setFont(PDType1Font.HELVETICA_BOLD, 14);
+                cs1.newLineAtOffset(200, 680);
+                cs1.showText(I18nUtil.get("estadistica.grafico.sexo.title"));
                 cs1.endText();
 
-                // GRAFICO SEXO
+                // GRÁFICO SEXO
                 DefaultPieDataset sexoData = new DefaultPieDataset();
-                sexoData.setValue("Hembras", contarHembras(ovejas));
-                sexoData.setValue("Machos", ovejas.size() - contarHembras(ovejas));
-                BufferedImage imgSexo = ChartFactory.createPieChart("Sexo", sexoData, false, false, false)
-                        .createBufferedImage(350, 280);
-                cs1.drawImage(LosslessFactory.createFromImage(doc, imgSexo), 122, 420, 350, 280);
+                sexoData.setValue(I18nUtil.get("estadistica.grafico.sexo.hembras"), contarHembras(ovejas));
+                sexoData.setValue(I18nUtil.get("estadistica.grafico.sexo.machos"), total - contarHembras(ovejas));
+                BufferedImage imgSexo = ChartFactory.createPieChart(I18nUtil.get("estadistica.grafico.sexo.title"), 
+                        sexoData, false, false, false)
+                        .createBufferedImage(380, 300);
+                cs1.drawImage(LosslessFactory.createFromImage(doc, imgSexo), 100, 350, 380, 300);
             }
 
-            // PÁGINA 2: RAZAS
+            // PÁGINA 2: RAZAS 
             PDPage page2 = new PDPage(PDRectangle.A4);
             doc.addPage(page2);
-
             try (PDPageContentStream cs2 = new PDPageContentStream(doc, page2)) {
-                // HEADER página 2
                 cs2.beginText();
-                cs2.setFont(PDType1Font.HELVETICA_BOLD, 15);
-                cs2.newLineAtOffset(50, 800);
-                cs2.showText("OVEJAS POR RAZA");
+                cs2.setFont(PDType1Font.HELVETICA_BOLD, 16);
+                cs2.newLineAtOffset(50, 780);
+                cs2.showText(I18nUtil.get("estadistica.pdf.header2"));
                 cs2.endText();
 
-                // TITULO GRAFICO
                 cs2.beginText();
-                cs2.setFont(PDType1Font.HELVETICA_BOLD, 12);
-                cs2.newLineAtOffset(200, 750);
-                cs2.showText("DISTRIBUCION POR RAZA");
+                cs2.setFont(PDType1Font.HELVETICA_BOLD, 14);
+                cs2.newLineAtOffset(200, 680);
+                cs2.showText(I18nUtil.get("estadistica.grafico.razas.title"));
                 cs2.endText();
 
-                // GRAFICO RAZAS
                 DefaultCategoryDataset razasData = new DefaultCategoryDataset();
                 ovejas.stream().collect(Collectors.groupingBy(Oveja::getRaza, Collectors.counting()))
-                        .forEach((r, c) -> razasData.addValue(c, "N", r));
-                BufferedImage imgRazas = ChartFactory.createBarChart("Razas", "Raza", "N", razasData,
-                        PlotOrientation.VERTICAL, false, false, false)
-                        .createBufferedImage(350, 280);
-                cs2.drawImage(LosslessFactory.createFromImage(doc, imgRazas), 122, 420, 350, 280);
+                        .forEach((r, c) -> razasData.addValue(c, I18nUtil.get("estadistica.grafico.razas.ovejas"), r));
+                BufferedImage imgRazas = ChartFactory.createBarChart(I18nUtil.get("estadistica.grafico.razas.title"),
+                        I18nUtil.get("estadistica.grafico.razas.raza"),
+                        I18nUtil.get("estadistica.grafico.razas.cantidad"),
+                        razasData,
+                        PlotOrientation.VERTICAL, false, false, false).createBufferedImage(380, 300);
+                cs2.drawImage(LosslessFactory.createFromImage(doc, imgRazas), 100, 350, 380, 300);
             }
 
             // PÁGINA 3: ESTADO
             PDPage page3 = new PDPage(PDRectangle.A4);
             doc.addPage(page3);
-
             try (PDPageContentStream cs3 = new PDPageContentStream(doc, page3)) {
-                // HEADER página 3
                 cs3.beginText();
-                cs3.setFont(PDType1Font.HELVETICA_BOLD, 15);
-                cs3.newLineAtOffset(50, 800);
-                cs3.showText("ESTADO DEL REBAÑO");
+                cs3.setFont(PDType1Font.HELVETICA_BOLD, 16);
+                cs3.newLineAtOffset(50, 780);
+                cs3.showText(I18nUtil.get("estadistica.pdf.header3"));
                 cs3.endText();
 
                 // KPIs ESTADO
                 cs3.beginText();
-                cs3.setFont(PDType1Font.HELVETICA_BOLD, 11);
-                cs3.newLineAtOffset(50, 780);
-                cs3.showText("ACTIVAS:" + activas + " (" + String.format("%.0f%%", activas * 100.0 / total)
-                        + ") | INACTIVAS:" + (total - activas) + " ("
-                        + String.format("%.0f%%", (total - activas) * 100.0 / total) + ")");
-                cs3.endText();
-
-                // TITULO GRAFICO
-                cs3.beginText();
                 cs3.setFont(PDType1Font.HELVETICA_BOLD, 12);
-                cs3.newLineAtOffset(180, 750);
-                cs3.showText("ACTIVAS vs INACTIVAS");
+                cs3.newLineAtOffset(50, 740);
+                double pctAct = total > 0 ? activas * 100.0 / total : 0;
+                cs3.showText(I18nUtil.get("estadistica.pdf.estado.kpis"));
                 cs3.endText();
 
-                // GRAFICO ESTADO
+                cs3.beginText();
+                cs3.setFont(PDType1Font.HELVETICA_BOLD, 14);
+                cs3.newLineAtOffset(200, 680);
+                cs3.showText(I18nUtil.get("estadistica.grafico.activas.title"));
+                cs3.endText();
+
                 DefaultPieDataset estadoData = new DefaultPieDataset();
-                estadoData.setValue("Activas", activas);
-                estadoData.setValue("Inactivas", total - activas);
-                BufferedImage imgEstado = ChartFactory.createPieChart("Estado", estadoData, false, false, false)
-                        .createBufferedImage(400, 300);
-                cs3.drawImage(LosslessFactory.createFromImage(doc, imgEstado), 98, 380, 400, 300);
+                estadoData.setValue(I18nUtil.get("estadistica.grafico.activas.label.activas"), activas);
+                estadoData.setValue(I18nUtil.get("estadistica.grafico.activas.label.inactivas"), total - activas);
+                BufferedImage imgEstado = ChartFactory.createPieChart((I18nUtil.get("estadistica.grafico.activas.title")), estadoData, false, false, false)
+                        .createBufferedImage(380, 300);
+                cs3.drawImage(LosslessFactory.createFromImage(doc, imgEstado), 100, 350, 380, 300);
             }
 
             // GUARDAR
             doc.save(ruta);
-            JOptionPane.showMessageDialog(this, "PDF 3 paginas generado perfectamente:\n" + ruta);
+            JOptionPane.showMessageDialog(this, String.format(I18nUtil.get("estadistica.pdf.success"), ruta));
 
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Error escritura PDF:\n" + e.getMessage());
+            JOptionPane.showMessageDialog(this, String.format(I18nUtil.get("estadistica.pdf.error.io"), e.getMessage()));
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, String.format(I18nUtil.get("estadistica.stats.error"), e.getMessage()));
         }
+    }
+    
+    /**
+     * Actualiza TODOS los textos i18n del panel según locale actual. 
+     *
+     * @see PrincipalFrame#updateAllTexts()
+     */
+    protected void updateAllTexts() {
+        // Título KPIs border (getComponent(0) = kpiContainer)
+        if (getComponentCount() > 0) {
+            Component kpiContainer = getComponent(0);
+            if (kpiContainer instanceof JPanel) {
+                JPanel containerPanel = (JPanel) kpiContainer;
+                if (containerPanel.getComponentCount() > 0) {
+                    ((JPanel) containerPanel.getComponent(0)).setBorder(
+                            BorderFactory.createTitledBorder(I18nUtil.get("estadistica.border.kpis"))
+                    );
+                }
+            }
+        }
+
+        // Botones PDF/Actualizar (botonesPanel → índices 1,2)
+        if (getComponentCount() > 0) {
+            Component kpiContainer = getComponent(0);
+            if (kpiContainer instanceof JPanel) {
+                JPanel containerPanel = (JPanel) kpiContainer;
+                if (containerPanel.getComponentCount() > 1) {
+                    Component botonesPanel = containerPanel.getComponent(1);
+                    if (botonesPanel instanceof JPanel) {
+                        Component[] buttons = ((JPanel) botonesPanel).getComponents();
+                        if (buttons.length >= 2) {
+                            ((JButton) buttons[0]).setText(I18nUtil.get("estadistica.btn.actualizar"));
+                            ((JButton) buttons[1]).setText(I18nUtil.get("estadistica.btn.pdf"));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Gráficos border (getComponent(1))
+        if (getComponentCount() > 1) {
+            chartPanelContainer.setBorder(
+                    BorderFactory.createTitledBorder(I18nUtil.get("estadistica.border.graficos"))
+            );
+        }
+
+        actualizarEstadisticas();  
+        
+        revalidate();
+        repaint();
     }
 
 }

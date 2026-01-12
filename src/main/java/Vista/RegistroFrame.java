@@ -10,6 +10,7 @@ import Servicio.UsuarioService;
 import Util.PasswordEncoderUtil;
 import javax.swing.*;
 import java.awt.*;
+import Util.I18nUtil;
 
 /**
  * Ventana de registro de nuevos usuarios para Ganadería App. Implementa
@@ -56,7 +57,7 @@ public class RegistroFrame extends JFrame {
      */
     private void initComponents() {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setTitle("Registro - Ganadería GP");
+        setTitle(I18nUtil.get("registro.title"));
         setSize(450, 450);
         setLayout(new GridBagLayout());
 
@@ -69,55 +70,55 @@ public class RegistroFrame extends JFrame {
         // Username requerido
         c.gridx = 0;
         c.gridy = fila++;
-        add(new JLabel("Username *:"), c);
+        add(new JLabel(I18nUtil.get("registro.username")), c);
         c.gridx = 1;
         txtUsername = new JTextField(20);
-        txtUsername.setToolTipText("Nombre único sin espacios (ej: admin123)");
+        txtUsername.setToolTipText(I18nUtil.get("registro.tooltip.username"));
         add(txtUsername, c);
 
         // Email requerido
         c.gridx = 0;
         c.gridy = fila++;
-        add(new JLabel("Email *:"), c);
+        add(new JLabel(I18nUtil.get("registro.email")), c);
         c.gridx = 1;
         txtEmail = new JTextField(20);
-        txtEmail.setToolTipText("Para recuperación de contraseña (ej: user@ganaderia.es)");
+        txtEmail.setToolTipText(I18nUtil.get("registro.tooltip.email"));
         add(txtEmail, c);
 
         // Nombre opcional
         c.gridx = 0;
         c.gridy = fila++;
-        add(new JLabel("Nombre:"), c);
+        add(new JLabel(I18nUtil.get("registro.nombre")), c);
         c.gridx = 1;
         txtNombre = new JTextField(20);
-        txtNombre.setToolTipText("Nombre real del usuario");
+        txtNombre.setToolTipText(I18nUtil.get("registro.tooltip.nombre"));
         add(txtNombre, c);
 
         // Apellidos opcionales
         c.gridx = 0;
         c.gridy = fila++;
-        add(new JLabel("Apellidos:"), c);
+        add(new JLabel(I18nUtil.get("registro.apellidos")), c);
         c.gridx = 1;
         txtApellidos = new JTextField(20);
-        txtApellidos.setToolTipText("Apellidos completos");
+        txtApellidos.setToolTipText(I18nUtil.get("registro.tooltip.apellidos"));
         add(txtApellidos, c);
 
         // Contraseña requerida
         c.gridx = 0;
         c.gridy = fila++;
-        add(new JLabel("Contraseña *:"), c);
+        add(new JLabel(I18nUtil.get("registro.password")), c);
         c.gridx = 1;
         txtPassword = new JPasswordField(20);
-        txtPassword.setToolTipText("Mínimo 6 caracteres seguros");
+        txtPassword.setToolTipText(I18nUtil.get("registro.tooltip.password"));
         add(txtPassword, c);
 
         // Repetición requerida
         c.gridx = 0;
         c.gridy = fila++;
-        add(new JLabel("Repetir *:"), c);
+        add(new JLabel(I18nUtil.get("registro.repeat")), c);
         c.gridx = 1;
         txtRepeatPassword = new JPasswordField(20);
-        txtRepeatPassword.setToolTipText("Debe coincidir exactamente");
+        txtRepeatPassword.setToolTipText(I18nUtil.get("registro.tooltip.repeat"));
         add(txtRepeatPassword, c);
 
         // Panel botones con mnemonics
@@ -127,12 +128,12 @@ public class RegistroFrame extends JFrame {
         c.fill = GridBagConstraints.HORIZONTAL;
         JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton btnRegistrar = new JButton("REGISTRAR");
+        JButton btnRegistrar = new JButton(I18nUtil.get("registro.btn.registrar"));
         btnRegistrar.setMnemonic('R');  // Alt+R
         getRootPane().setDefaultButton(btnRegistrar);  // Enter = ejecutar
         btnRegistrar.addActionListener(e -> guardarUsuario());
 
-        JButton btnCancelar = new JButton("Cancelar");
+        JButton btnCancelar = new JButton(I18nUtil.get("registro.btn.cancelar"));
         btnCancelar.setMnemonic('C');  // Alt+C
         btnCancelar.addActionListener(e -> dispose());
 
@@ -156,18 +157,22 @@ public class RegistroFrame extends JFrame {
 
         // Validaciones obligatorias (cumple requisitos gestión errores)
         if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Username, email y contraseña obligatorios", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    I18nUtil.get("registro.error.required"),
+                    I18nUtil.get("registro.error.required"), JOptionPane.ERROR_MESSAGE);
             txtUsername.requestFocus();
             return;
         }
         if (!password.equals(repeatPassword)) {
-            JOptionPane.showMessageDialog(this, "Las contraseñas no coinciden", "Error", JOptionPane.ERROR_MESSAGE);
-            txtPassword.requestFocus();
+            JOptionPane.showMessageDialog(this,
+                    I18nUtil.get("registro.error.repeat"),
+                    I18nUtil.get("registro.error.repeat"), JOptionPane.ERROR_MESSAGE);
             return;
         }
         if (password.length() < 6) {
-            JOptionPane.showMessageDialog(this, "Contraseña mínima 6 caracteres", "Error", JOptionPane.ERROR_MESSAGE);
-            txtPassword.requestFocus();
+            JOptionPane.showMessageDialog(this,
+                    I18nUtil.get("registro.error.minlength"),
+                    I18nUtil.get("registro.error.minlength"), JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -180,19 +185,25 @@ public class RegistroFrame extends JFrame {
             // Registrar delega encriptación/validación duplicados
             Usuario nuevo = usuarioService.registrar(username, password, email, nombre, apellidos);
             if (nuevo != null) {
-                JOptionPane.showMessageDialog(this, "¡Usuario registrado correctamente!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        I18nUtil.get("registro.success"),
+                        I18nUtil.get("registro.success"), JOptionPane.INFORMATION_MESSAGE);
                 // Comunicación padre-hijo: rellenar login
                 parent.getTxtUsername().setText(username);
                 parent.getTxtPassword().requestFocus();
                 dispose();  // Cerrar modal
             } else {
-                JOptionPane.showMessageDialog(this, "Username ya existe. Elige otro.", "Duplicado", JOptionPane.ERROR_MESSAGE);
+                   JOptionPane.showMessageDialog(this,
+                        I18nUtil.get("registro.error.duplicate"),
+                        I18nUtil.get("registro.error.duplicate"), JOptionPane.ERROR_MESSAGE);
                 txtUsername.selectAll();
                 txtUsername.requestFocus();
             }
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error de base de datos: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    I18nUtil.get("registro.error.database", ex.getMessage()),
+                    I18nUtil.get("registro.error.database.title"), JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -202,6 +213,39 @@ public class RegistroFrame extends JFrame {
     public LoginFrame getParent() {
         return parent;
     }
+    
+    /**
+     * Actualiza TODOS los textos i18n del frame según locale actual.
+     */
+    protected void updateAllTexts() {
+        setTitle(I18nUtil.get("registro.title"));
+
+        // Labels
+        ((JLabel) getContentPane().getComponent(0)).setText(I18nUtil.get("registro.username"));  
+        ((JLabel) getContentPane().getComponent(2)).setText(I18nUtil.get("registro.email"));     
+        ((JLabel) getContentPane().getComponent(4)).setText(I18nUtil.get("registro.nombre"));    
+        ((JLabel) getContentPane().getComponent(6)).setText(I18nUtil.get("registro.apellidos")); 
+        ((JLabel) getContentPane().getComponent(8)).setText(I18nUtil.get("registro.password"));  
+        ((JLabel) getContentPane().getComponent(10)).setText(I18nUtil.get("registro.repeat"));   
+
+        // Botones 
+        JPanel pnlBotones = (JPanel) getContentPane().getComponent(12); 
+        ((JButton) pnlBotones.getComponent(0)).setText(I18nUtil.get("registro.btn.registrar"));
+        ((JButton) pnlBotones.getComponent(1)).setText(I18nUtil.get("registro.btn.cancelar"));
+
+        // Tooltips 
+        txtUsername.setToolTipText(I18nUtil.get("registro.tooltip.username"));
+        txtEmail.setToolTipText(I18nUtil.get("registro.tooltip.email"));
+        txtNombre.setToolTipText(I18nUtil.get("registro.tooltip.nombre"));
+        txtApellidos.setToolTipText(I18nUtil.get("registro.tooltip.apellidos"));
+        txtPassword.setToolTipText(I18nUtil.get("registro.tooltip.password"));
+        txtRepeatPassword.setToolTipText(I18nUtil.get("registro.tooltip.repeat"));
+
+        revalidate();
+        repaint();
+    }
+
+
 
     /**
      * Método main para testing independiente.

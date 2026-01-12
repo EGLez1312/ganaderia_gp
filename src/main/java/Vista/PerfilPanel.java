@@ -11,6 +11,7 @@ import Servicio.UsuarioService;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
+import Util.I18nUtil;
 
 /**
  * Panel editable para gestión de perfil de usuario autenticado. Permite
@@ -65,7 +66,7 @@ public class PerfilPanel extends JPanel {
         setBackground(Color.WHITE);
 
         // Título principal
-        JLabel lblTitulo = new JLabel("Mi Perfil", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel(I18nUtil.get("perfil.titulo"), SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitulo.setForeground(new Color(45, 85, 150));
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
@@ -81,7 +82,7 @@ public class PerfilPanel extends JPanel {
 
         // Username (solo lectura, destacado)
         c.gridy = 0;
-        pnlForm.add(new JLabel("Username:"), c);
+        pnlForm.add(new JLabel(I18nUtil.get("perfil.username")), c);
         c.gridx = 1;
         JLabel lblUsername = new JLabel(usuario.getUsername());
         lblUsername.setFont(new Font("Segoe UI", Font.ITALIC, 14));
@@ -92,37 +93,37 @@ public class PerfilPanel extends JPanel {
         // Nombre editable
         c.gridy = 1;
         c.gridx = 0;
-        pnlForm.add(new JLabel("Nombre *:"), c);
+        pnlForm.add(new JLabel(I18nUtil.get("perfil.nombre")), c);
         c.gridx = 1;
         txtNombre = new JTextField(22);
-        txtNombre.setToolTipText("Tu nombre real (obligatorio)");
+        txtNombre.setToolTipText(I18nUtil.get("perfil.tooltip.nombre"));
         pnlForm.add(txtNombre, c);
 
         // Apellidos
         c.gridy = 2;
         c.gridx = 0;
-        pnlForm.add(new JLabel("Apellidos *:"), c);
+        pnlForm.add(new JLabel(I18nUtil.get("perfil.apellidos")), c);
         c.gridx = 1;
         txtApellidos = new JTextField(22);
-        txtApellidos.setToolTipText("Apellidos completos (obligatorio)");
+        txtApellidos.setToolTipText(I18nUtil.get("perfil.tooltip.apellidos"));
         pnlForm.add(txtApellidos, c);
 
         // Email con validación
         c.gridy = 3;
         c.gridx = 0;
-        pnlForm.add(new JLabel("Email *:"), c);
+        pnlForm.add(new JLabel(I18nUtil.get("perfil.email")), c);
         c.gridx = 1;
         txtEmail = new JTextField(22);
-        txtEmail.setToolTipText("Email válido para notificaciones/recuperación");
+        txtEmail.setToolTipText(I18nUtil.get("perfil.tooltip.email"));
         pnlForm.add(txtEmail, c);
 
         // Nueva contraseña opcional
         c.gridy = 4;
         c.gridx = 0;
-        pnlForm.add(new JLabel("Nueva contraseña:"), c);
+        pnlForm.add(new JLabel(I18nUtil.get("perfil.password")), c);
         c.gridx = 1;
         txtPassword = new JPasswordField(22);
-        txtPassword.setToolTipText("Dejar vacío para mantener actual (mínimo 6 chars)");
+        txtPassword.setToolTipText(I18nUtil.get("perfil.tooltip.password"));
         pnlForm.add(txtPassword, c);
 
         // Botón acción principal
@@ -130,7 +131,7 @@ public class PerfilPanel extends JPanel {
         c.gridx = 0;
         c.gridwidth = 2;
         c.insets = new Insets(25, 12, 12, 12);
-        JButton btnGuardar = new JButton("Actualizar Perfil");
+        JButton btnGuardar = new JButton(I18nUtil.get("perfil.btn.guardar"));
         btnGuardar.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         btnGuardar.setMnemonic('G');  // Alt+G
         btnGuardar.setBackground(new Color(50, 150, 50));
@@ -164,12 +165,16 @@ public class PerfilPanel extends JPanel {
 
         // Validaciones robustas
         if (nombre.isEmpty() || apellidos.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nombre y apellidos obligatorios", "Validación", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    I18nUtil.get("perfil.error.required"),
+                    I18nUtil.get("perfil.validation.title"), JOptionPane.WARNING_MESSAGE);
             txtNombre.requestFocus();
             return;
         }
         if (!email.matches("^[A-Za-z0-9+_.-]+@([A-Za-z0-9-]+\\.)+[A-Za-z]{2,}$")) {
-            JOptionPane.showMessageDialog(this, "Email inválido", "Validación", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    I18nUtil.get("perfil.error.email"),
+                    I18nUtil.get("perfil.validation.title"), JOptionPane.WARNING_MESSAGE);
             txtEmail.selectAll();
             txtEmail.requestFocus();
             return;
@@ -191,21 +196,22 @@ public class PerfilPanel extends JPanel {
             if (passChars.length > 5) {  // Mínimo 6
                 String passPlana = new String(passChars);
                 usuario.setPassword(encoder.encode(passPlana));
-                Arrays.fill(passChars, '0');  // Zeroizar memoria
+                Arrays.fill(passChars, '0');  // Memoria a 0
             }
 
             // Persistir cambios
-            dao.actualizar(usuario);  // ← CORREGIDO: actualizar
+            dao.actualizar(usuario);
             JOptionPane.showMessageDialog(this,
-                    "¡Perfil actualizado correctamente!\nRefresca para ver cambios.",
-                    "Guardado", JOptionPane.INFORMATION_MESSAGE);
+                    I18nUtil.get("perfil.success"),
+                    I18nUtil.get("perfil.success"), JOptionPane.INFORMATION_MESSAGE);
 
             txtPassword.setText("");  // Limpiar UI
             txtNombre.requestFocus();
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
-                    "Error guardando: " + e.getMessage(), "Error BD", JOptionPane.ERROR_MESSAGE);
+                    String.format(I18nUtil.get("perfil.error.save"), e.getMessage()),
+                    I18nUtil.get("perfil.validation.title"), JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -222,4 +228,56 @@ public class PerfilPanel extends JPanel {
     public void refresh() {
         cargarDatos();
     }
+
+    /**
+     * Actualiza todos los textos i18n del panel según locale actual.
+     */
+    protected void updateAllTexts() {
+        // Título
+        Component northComp = ((BorderLayout) getLayout()).getLayoutComponent(BorderLayout.NORTH);
+        if (northComp instanceof JPanel) {
+            Component[] titleComps = ((JPanel) northComp).getComponents();
+            if (titleComps.length > 0 && titleComps[0] instanceof JLabel) {
+                ((JLabel) titleComps[0]).setText(I18nUtil.get("perfil.titulo"));
+            }
+        }
+
+        // Formulario
+        Component centerComp = ((BorderLayout) getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        if (centerComp instanceof JPanel) {
+            Component[] formComponents = ((JPanel) centerComp).getComponents();
+            // Labels: 0=username, 2=nombre, 4=apellidos, 6=email, 8=password
+            if (formComponents.length >= 10) {
+                ((JLabel) formComponents[0]).setText(I18nUtil.get("perfil.username"));
+                ((JLabel) formComponents[2]).setText(I18nUtil.get("perfil.nombre"));
+                ((JLabel) formComponents[4]).setText(I18nUtil.get("perfil.apellidos"));
+                ((JLabel) formComponents[6]).setText(I18nUtil.get("perfil.email"));
+                ((JLabel) formComponents[8]).setText(I18nUtil.get("perfil.password"));
+
+                // Botón Guardar (índice 10)
+                if (formComponents.length > 10 && formComponents[10] instanceof JButton) {
+                    ((JButton) formComponents[10]).setText(I18nUtil.get("perfil.btn.guardar"));
+                }
+            }
+        }
+
+        // Tooltips
+        if (txtNombre != null) {
+            txtNombre.setToolTipText(I18nUtil.get("perfil.tooltip.nombre"));
+        }
+        if (txtApellidos != null) {
+            txtApellidos.setToolTipText(I18nUtil.get("perfil.tooltip.apellidos"));
+        }
+        if (txtEmail != null) {
+            txtEmail.setToolTipText(I18nUtil.get("perfil.tooltip.email"));
+        }
+        if (txtPassword != null) {
+            txtPassword.setToolTipText(I18nUtil.get("perfil.tooltip.password"));
+        }
+
+        revalidate();
+        repaint();
+    }
+
+
 }
