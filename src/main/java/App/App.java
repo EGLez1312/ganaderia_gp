@@ -11,7 +11,7 @@ import javax.swing.UIManager;
  * Punto de entrada de la aplicación de gestión ganadera.
  * 
  * @author Elena González
- * @version 1.0
+ * @version 2.0
  */
 public class App {
 
@@ -19,6 +19,7 @@ public class App {
         try {
             // Establece el aspecto nativo de Windows
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            UIManager.put("swing.boldMetal", Boolean.FALSE);
         } catch (Exception e) {
             e.printStackTrace();
         }

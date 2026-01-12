@@ -20,7 +20,7 @@ import Util.I18nUtil;
  * memoria contraseñas, seguridad BD.
  *
  * @author Elena González
- * @version 1.0
+ * @version 2.0
  */
 public class PerfilPanel extends JPanel {
 

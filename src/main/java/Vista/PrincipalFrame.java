@@ -201,7 +201,6 @@ public class PrincipalFrame extends JFrame {
 
             // Si entramos en la pestaña de Eventos (índice 1), refrescamos el combo
             if (index == 1 && eventosPanel != null) {
-                // Asegúrate de que el método en EventoPanel sea público
                 eventosPanel.cargarOvejasCombo();
             }
         });

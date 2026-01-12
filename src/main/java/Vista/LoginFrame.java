@@ -20,7 +20,7 @@ import java.util.Locale;
  * Cumple con los requisitos: 3 botones (Acceso, Registro, Recuperar contraseña).
  * 
  * @author Elena González
- * @version 1.0
+ * @version 2.0
  */
 public class LoginFrame extends JFrame {
 
@@ -125,6 +125,9 @@ public class LoginFrame extends JFrame {
         JComboBox<String> cmbIdioma = new JComboBox<>(new String[]{
             "ES", "EN"
         });
+        cmbIdioma.setPreferredSize(new Dimension(50, 25));
+        cmbIdioma.setMinimumSize(new Dimension(50, 25));
+        cmbIdioma.setMaximumSize(new Dimension(50, 25));
         cmbIdioma.setSelectedIndex(0);  // Español por defecto
         cmbIdioma.addActionListener(e -> {
             String lang = (String) cmbIdioma.getSelectedItem();  // "ES"/"EN"
@@ -134,7 +137,7 @@ public class LoginFrame extends JFrame {
             updateAllTexts();  // PrincipalFrame.updateAllTexts()
         });
 
-        pnlIdioma.add(new JLabel("Idioma:"));
+        pnlIdioma.add(new JLabel("Idioma/Language:"));
         pnlIdioma.add(cmbIdioma);
 
         gbc.gridy = 3;
@@ -279,8 +282,5 @@ public class LoginFrame extends JFrame {
         // Tooltips
         txtUsername.setToolTipText(I18nUtil.get("login.tooltip.username"));
         txtPassword.setToolTipText(I18nUtil.get("login.tooltip.password"));
-
-        // Idioma label (ajusta índice 0):
-        // ((JLabel)pnlIdioma.getComponent(0)).setText(I18nUtil.get("idioma.selector"));
     }
 }

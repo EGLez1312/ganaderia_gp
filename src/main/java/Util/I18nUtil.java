@@ -30,8 +30,7 @@ public class I18nUtil {
     
     /**
      * Nombre base de los ficheros de recursos sin extensión. Los ficheros
-     * reales serán: {@code messages.properties}, {@code messages_es.properties},
-     * {@code messages_en.properties}
+     * reales serán: {@code messages_es.properties}, {@code messages_en.properties}
      */
     private static final String BASE_NAME = "messages";
 
@@ -75,7 +74,7 @@ public class I18nUtil {
     /**
      * Obtiene un texto internacionalizado con formato de parámetros opcional.
      * 
-     * ¡Único método público! Crea ResourceBundle fresco cada llamada
+     * Único método público. Crea ResourceBundle fresco cada llamada
      * (sin cache → soporta cambio runtime).
      * 
      *
@@ -105,7 +104,7 @@ public class I18nUtil {
     /**
      * Obtiene localidad actual de la aplicación.
      *
-     * @return Locale activo (ej: es_ES, en_US)
+     * @return Locale activo (ej: es_ES, en_UK)
      */
     public static Locale getLocale() {
         return (Locale) locale.clone();  // Inmutable

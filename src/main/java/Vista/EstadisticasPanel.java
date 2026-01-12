@@ -46,7 +46,7 @@ import Util.I18nUtil;
  * Incluye exportación a PDF con gráficos como imágenes.
  * 
  * @author Elena González
- * @version 1.0
+ * @version 2.0
  * @see OvejaDAO
  * @see EventoDAO
  */
@@ -258,8 +258,7 @@ public class EstadisticasPanel extends JPanel {
      * Consulta directamente los métodos {@link #contarActivas()} y
      * {@link #contarTotal()} del DAO para obtener conteos optimizados (COUNT
      * SQL). Las inactivas se calculan como diferencia del total. Colores
-     * automáticos JFreeChart: verde(intenso) para Activas, rojo(naranja) para
-     * Inactivas.
+     * automáticos JFreeChart.
      *
      * @return ChartPanel listo para añadir a contenedor Swing con resize
      * automático
@@ -321,7 +320,6 @@ public class EstadisticasPanel extends JPanel {
      * PÁGINA 1: Header, KPIs, Grafico SEXO (centrado) PÁGINA 2: Grafico RAZAS
      * (centrado) PÁGINA 3: Grafico ESTADO (centrado)
      *
-     * Garantizado: sin cortes, todo visible, layout profesional.
      */
     private void exportarPDF() {
         JFileChooser chooser = new JFileChooser();

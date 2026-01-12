@@ -18,7 +18,7 @@ import Util.I18nUtil;
  * comunicación con LoginFrame padre. Usa UsuarioService para MVC correcto.
  *
  * @author Elena González
- * @version 1.0
+ * @version 2.0
  */
 public class RegistroFrame extends JFrame {
 

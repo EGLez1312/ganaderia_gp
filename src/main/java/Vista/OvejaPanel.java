@@ -25,7 +25,7 @@ import Util.I18nUtil;
  * Soporta filtro activo/bajas y doble-click para editar.
  * 
  * @author Elena González
- * @version 1.0
+ * @version 2.0
  */
 public class OvejaPanel extends JPanel{
     
@@ -180,7 +180,8 @@ public class OvejaPanel extends JPanel{
                 btnReincorporar.setEnabled(fila >= 0 && chkMostrarBajas.isSelected());
 
                 if (puedeParto) {
-                    btnParto.setToolTipText(String.format(I18nUtil.get("oveja.tooltip.parto.ready"), tblOveja.getValueAt(fila, 1)));
+                    btnParto.setToolTipText(String.format(I18nUtil.get("oveja.tooltip.parto.ready"), 
+                            tblOveja.getValueAt(fila, 1)));
                 } else {
                     btnParto.setToolTipText(I18nUtil.get("oveja.tooltip.parto.select"));
                 }
@@ -248,7 +249,7 @@ public class OvejaPanel extends JPanel{
 
     /**
      * Carga la lista de ovejas en la tabla según filtro activo/bajas.
-     * Limpia modelo y popula con datos del DAO.
+     * Limpia modelo y carga datos del DAO.
      */
     private void cargarOvejas() {
         try {
@@ -609,10 +610,10 @@ public class OvejaPanel extends JPanel{
             I18nUtil.get("oveja.col.estado")
         });
 
-        // Labels formulario (por índice GridBagLayout)
+        // Labels formulario
         if (pnlForm != null) {
             Component[] labels = pnlForm.getComponents();
-            if (labels.length >= 12) {  // 6 labels x 2 columnas
+            if (labels.length >= 12) {
                 ((JLabel) labels[0]).setText(I18nUtil.get("oveja.form.numero"));
                 ((JLabel) labels[2]).setText(I18nUtil.get("oveja.form.peso"));
                 ((JLabel) labels[4]).setText(I18nUtil.get("oveja.form.raza"));

@@ -13,8 +13,7 @@ import org.hibernate.cfg.Configuration;
 /**
  * Factory Singleton Hibernate 5.x con inicialización tolerante a fallos.
  * Static block try-catch: NO falla la app si hibernate.cfg.xml/DB cae. DAOs
- * detectan sessionFactory=null y manejan graceful degradation. Perfecto para
- * desarrollo/debug sin parar app por config BD.
+ * detectan sessionFactory=null y manejan graceful degradation. 
  *
  * @author Elena González
  * @version 1.0
@@ -28,8 +27,8 @@ public class HibernateUtil {
     private static SessionFactory sessionFactory;
 
     /**
-     * **Static initializer tolerante**: construye SessionFactory o null. **NO
-     * lanza ExceptionInInitializerError** → app sobrevive. Loggea error
+     * Static initializer tolerante: construye SessionFactory o null. NO
+     * lanza ExceptionInInitializerError → app sobrevive. Loggea error
      * console, DAOs manejan null graceful.
      */
     static {
@@ -54,8 +53,8 @@ public class HibernateUtil {
     }
 
     /**
-     * Devuelve SessionFactory o lanza excepción clara si fallo. **DAOs llaman
-     * este método** → fallan solo cuando intentan BD.
+     * Devuelve SessionFactory o lanza excepción clara si fallo. DAOs llaman
+     * este método → fallan solo cuando intentan BD.
      *
      * @return SessionFactory activa.
      * @throws IllegalStateException si hibernate.cfg.xml/DB/entidades fallan.

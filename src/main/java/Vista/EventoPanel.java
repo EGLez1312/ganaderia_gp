@@ -91,7 +91,7 @@ public class EventoPanel extends JPanel {
     }
     
     /**
-     * Crea título principal con emoji y ToolTip informativo.
+     * Crea título principal con ToolTip informativo.
      */
     private void crearTitulo() {
         JLabel lblTitulo = new JLabel(I18nUtil.get("evento.title"), SwingConstants.CENTER);
