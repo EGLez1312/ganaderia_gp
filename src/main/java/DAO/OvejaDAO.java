@@ -177,9 +177,11 @@ public class OvejaDAO {
      * @return número total de registros.
      */
     public long contarTotal() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Long resultado = session.createQuery("SELECT COUNT(o) FROM Oveja o", Long.class).uniqueResult();
-            return resultado != null ? resultado : 0L;
+        try (Session session = getSession()) {
+            Query<Long> query = session.createQuery("SELECT COUNT(id) FROM Oveja", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            return 0;
         }
     }
 
@@ -189,9 +191,11 @@ public class OvejaDAO {
      * @return número de ovejas con activo = true.
      */
     public long contarActivas() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            Long resultado = session.createQuery("SELECT COUNT(o) FROM Oveja o WHERE o.activo = true", Long.class).uniqueResult();
-            return resultado != null ? resultado : 0L;
+        try (Session session = getSession()) {
+            Query<Long> query = session.createQuery("SELECT COUNT(id) FROM Oveja WHERE activo = true", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            return 0;
         }
     }
 

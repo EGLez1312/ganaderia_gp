@@ -503,14 +503,19 @@ public class OvejaPanel extends JPanel{
         }
 
         Oveja madre = obtenerOvejaPorFila(fila);
+
+        // DEBUG: Verifica madre
+        System.out.println("DEBUG Parto - Madre: " + madre.getNumeroIdentificacion()
+                + " | Raza: '" + madre.getRaza() + "' | Sexo: " + madre.getSexo());
+
         if (!"H".equals(madre.getSexo()) || !madre.isActivo()
-                || madre.getPesoActual().compareTo(new BigDecimal("30")) < 0) {
+                || (madre.getPesoActual() != null && madre.getPesoActual().compareTo(new BigDecimal("30")) < 0)) {
             JOptionPane.showMessageDialog(this,
                     String.format(I18nUtil.get("oveja.parto.invalid"), madre.getNumeroIdentificacion()));
             return;
         }
 
-        // Sugerencia ID: siguiente número
+        // ID sugerencia
         long total = ovejaDAO.contarActivas();
         int sugerencia = (int) Math.min(total + 1, Integer.MAX_VALUE);
         String numHija = JOptionPane.showInputDialog(this,
@@ -521,32 +526,33 @@ public class OvejaPanel extends JPanel{
         if (numHija != null && !numHija.trim().isEmpty()) {
             String idHija = numHija.trim().toUpperCase();
             try {
-                // Verificar duplicado
                 if (ovejaDAO.buscarPorNumero(idHija) != null) {
                     JOptionPane.showMessageDialog(this,
                             String.format(I18nUtil.get("oveja.parto.duplicate"), idHija));
                     return;
                 }
 
-                // Crear hija (mismos valores por defecto que nuevaOveja)
+                // HIJA: copia raza madre (null-safe)
                 Oveja hija = new Oveja();
                 hija.setNumeroIdentificacion(idHija);
-                hija.setRaza(madre.getRaza());  // Misma raza
+                hija.setRaza(madre.getRaza());  
                 hija.setSexo("H");
-                hija.setPesoActual(new BigDecimal("3.5"));  // Por defecto recién nacida
+                hija.setPesoActual(new BigDecimal("3.5"));
                 hija.setFechaNacimiento(LocalDate.now());
                 hija.setEstadoSalud("Sana - Recién nacida");
                 hija.setActivo(true);
 
                 ovejaDAO.insertar(hija);
+                System.out.println("DEBUG Parto - Hija guardada: " + idHija
+                        + " | Raza: '" + hija.getRaza() + "'");
 
-                // Evento parto EN LA MADRE
+                // Evento parto MADRE
                 EventoDAO eventoDAO = new EventoDAO();
                 Evento parto = new Evento();
                 parto.setTipoEvento("Parto");
                 parto.setFechaEvento(LocalDate.now());
                 parto.setOveja(madre);
-                parto.setOvejaMadre(madre);
+                parto.setOvejaMadre(madre);  // Madre misma
                 eventoDAO.insertar(parto);
 
                 cargarOvejas();

@@ -38,6 +38,9 @@ public class EventoPanel extends JPanel {
     
     /** DAO auxiliar para combos de ovejas */
     private OvejaDAO ovejaDAO;
+
+    /** Oveja madre seleccionada para eventos tipo "Parto" */
+    private Oveja ovejaSeleccionada;
     
     /** Tabla principal con lista de eventos registrados */
     private JTable tblEventos;
@@ -293,6 +296,8 @@ public class EventoPanel extends JPanel {
         cmbOveja.setSelectedIndex(0);
         cmbTipo.setSelectedIndex(0);
         jdFecha.setDate(new java.util.Date());
+        ovejaSeleccionada = null;  // Reset para Parto
+        cargarOvejasCombo();
         txtObservaciones.setText("");
         cmbOveja.requestFocusInWindow();
     }
@@ -322,6 +327,14 @@ public class EventoPanel extends JPanel {
             LocalDate localDate = date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
             evento.setFechaEvento(localDate);
             evento.setObservaciones(txtObservaciones.getText());
+
+            if ("Parto".equals(evento.getTipoEvento())) {
+                // Usa la misma oveja del combo principal como madre (o agrega otro combo)
+                ovejaSeleccionada = evento.getOveja();  // O implementa selección separada
+                evento.setOvejaMadre(ovejaSeleccionada);
+            } else {
+                evento.setOvejaMadre(null);
+            }
             
             eventoDAO.insertar(evento);
             JOptionPane.showMessageDialog(this, I18nUtil.get("evento.success.registrar"));

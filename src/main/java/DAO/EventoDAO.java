@@ -40,13 +40,21 @@ public class EventoDAO {
      * @param evento evento a registrar.
      */
     public void insertar(Evento evento) {
-        Transaction tx = null;
+    Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
             session.persist(evento);
+
+            // Persistir ovejaMadre SI es nueva
+            if (evento.getOvejaMadre() != null && evento.getOvejaMadre().getId() == null) {
+                session.persist(evento.getOvejaMadre());
+            }
+
             tx.commit();
         } catch (Exception e) {
-            if (tx != null) tx.rollback();
+            if (tx != null) {
+                tx.rollback();
+            }
             e.printStackTrace();
         }
     }

@@ -36,6 +36,9 @@ import java.io.File;
 import java.time.format.DateTimeFormatter;
 import org.jfree.chart.plot.PlotOrientation;
 import Util.I18nUtil;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.text.MessageFormat;
 
 
 /**
@@ -72,6 +75,8 @@ public class EstadisticasPanel extends JPanel {
      */
     private JLabel[] kpiLabels;
     
+    private ResourceBundle bundle;
+    
     /**
      * Constructor principal del panel de estadísticas.
      * 
@@ -80,6 +85,7 @@ public class EstadisticasPanel extends JPanel {
      * Llama a {@link #actualizarEstadisticas()} para carga inicial de datos.
      */
     public EstadisticasPanel() {
+        bundle = ResourceBundle.getBundle("messages", Locale.forLanguageTag("es"));
         initComponents();
         actualizarEstadisticas();
     }
@@ -163,11 +169,20 @@ public class EstadisticasPanel extends JPanel {
             List<Oveja> ovejas = ovejaDAO.listarTodas();
            
             // Actualizar KPIs usando acceso directo a componentes
-            kpiLabels[0].setText(String.format(I18nUtil.get("estadistica.kpi.total"), contarTotal()));
-            kpiLabels[1].setText(String.format(I18nUtil.get("estadistica.kpi.eventos"), calcularEventosMes()));
-            kpiLabels[2].setText(String.format(I18nUtil.get("estadistica.kpi.peso"), String.format("%.1f", calcularPesoMedio(ovejas))));
-            kpiLabels[3].setText(String.format(I18nUtil.get("estadistica.kpi.hembras"), contarHembras(ovejas)));
-            kpiLabels[4].setText(String.format(I18nUtil.get("estadistica.kpi.activas"), contarActivas(), contarTotal()));
+            MessageFormat fmtTotal = new MessageFormat(I18nUtil.get("estadistica.kpi.total"));
+            kpiLabels[0].setText(fmtTotal.format(new Object[]{contarTotal()}));
+            
+            MessageFormat fmtEventos = new MessageFormat(I18nUtil.get("estadistica.kpi.eventos"));
+            kpiLabels[1].setText(fmtEventos.format(new Object[]{calcularEventosMes()}));
+
+            MessageFormat fmtPeso = new MessageFormat(I18nUtil.get("estadistica.kpi.peso"));
+            kpiLabels[2].setText(fmtPeso.format(new Object[]{calcularPesoMedio(ovejas)}));
+
+            MessageFormat fmtHembras = new MessageFormat(I18nUtil.get("estadistica.kpi.hembras"));
+            kpiLabels[3].setText(fmtHembras.format(new Object[]{contarHembras(ovejas)}));
+
+            MessageFormat fmtActivas = new MessageFormat(I18nUtil.get("estadistica.kpi.activas"));
+            kpiLabels[4].setText(fmtActivas.format(new Object[]{contarActivas(), contarTotal()}));
 
             // Actualizar Gráficos
             chartPanelContainer.removeAll();
@@ -179,6 +194,7 @@ public class EstadisticasPanel extends JPanel {
             chartPanelContainer.repaint();
             
         } catch (Exception e) {
+            e.printStackTrace();
             JOptionPane.showMessageDialog(this,
                     String.format(I18nUtil.get("estadistica.stats.error"), e.getMessage()),
                     I18nUtil.get("estadistica.stats.error"), JOptionPane.ERROR_MESSAGE);
