@@ -121,69 +121,62 @@ public class RecuperarPasswordFrame extends JFrame {
      */
     private void recuperarPassword() {
         String email = txtEmail.getText().trim();
-        if (email.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    I18nUtil.get("recuperar.error.empty"),
-                    I18nUtil.get("recuperar.error.empty"), JOptionPane.ERROR_MESSAGE);
+        if (email.isEmpty() || !email.contains("@")) {
+            lblDatos.setText("<html><center style='color:red;'>" + I18nUtil.get("recuperar.error.empty") + "</center></html>");
             txtEmail.requestFocus();
             return;
         }
 
+        UsuarioDAO dao = new UsuarioDAO();
         try {
-            // Inyección Service (MVC correcto)
-            UsuarioDAO dao = new UsuarioDAO();
-            PasswordEncoderUtil encoder = new PasswordEncoderUtil();
-            usuarioService = new UsuarioService(dao, encoder);
-
+            System.out.println("RECUPERAR: Buscando email='" + email + "'");
             Usuario usuario = dao.findByEmail(email);
-            if (usuario != null && usuario.isActivo()) {
-                // PASS TEMPORAL (NO encriptar para mostrarla)
-                String passTemporal = "admin123";
-                String passHash = encoder.encode(passTemporal);
-                usuario.setPassword(passHash);
-                dao.actualizar(usuario); 
+            System.out.println("RECUPERAR: Resultado usuario=" + (usuario != null ? usuario.getUsername() : "NULL"));
 
-                // Mostrar datos recuperados (HTML para formato)
-                String datosUsuario = String.format(I18nUtil.get("recuperar.datos.usuario"), usuario.getUsername());
-                String datos = String.format(
-                        "<html><div style='text-align:left;padding:10px;'>"
-                        + "<b>%s</b> <code>%s</code><br>"
-                        + "<b>%s</b> %s %s<br>"
-                        + "<b>%s</b> %s<br>"
-                        + "<b>%s</b> <font color='blue'><b>admin123</b></font><br>"
-                        + "<i style='color:orange;'>%s</i>"
-                        + "</div></html>",
-                        datosUsuario,
-                        usuario.getNombre() != null ? usuario.getNombre() : "",
-                        usuario.getApellidos() != null ? usuario.getApellidos() : "",
-                        I18nUtil.get("recuperar.datos.ultima"),
-                        usuario.getUltimaConexion() != null
-                        ? usuario.getUltimaConexion().toString()
-                        : I18nUtil.get("recuperar.datos.nunca")
-                );
-                lblDatos.setText(datos);
+            if (usuario == null || !usuario.isActivo()) {
+                lblDatos.setText("<html><center style='color:orange;'>" + I18nUtil.get("recuperar.notfound.active") + "</center></html>");
+                JOptionPane.showMessageDialog(this, I18nUtil.get("recuperar.error.notfound"));
+                return;
+            }
 
-                JOptionPane.showMessageDialog(this,
-                        I18nUtil.get("recuperar.success", usuario.getUsername()),
-                        I18nUtil.get("recuperar.success"), JOptionPane.INFORMATION_MESSAGE);
+            // ÉXITO: Temp pass
+            String tempPass = "admin123";
+            PasswordEncoderUtil encoder = new PasswordEncoderUtil();
+            usuario.setPassword(encoder.encode(tempPass));
+            dao.actualizar(usuario);
 
-                // Rellenar login padre
+            // Rellena lblDatos con datos reales
+            String ultima = usuario.getUltimaConexion() != null ? usuario.getUltimaConexion().toString() : I18nUtil.get("recuperar.datos.nunca");
+            lblDatos.setText(String.format("<html><div style='padding:10px;text-align:left;'>"
+                    + "<b>%s</b> <code>%s</code><br>"
+                    + "%s %s %s<br>"
+                    + "%s <font color='blue'>%s</font><br>"
+                    + "<i style='color:orange;'>%s</i>"
+                    + "</div></html>",
+                    I18nUtil.get("recuperar.datos.usuario", usuario.getUsername()),
+                    usuario.getEmail(),
+                    usuario.getNombre(), usuario.getApellidos(),
+                    I18nUtil.get("recuperar.datos.ultima"), ultima,
+                    I18nUtil.get("recuperar.datos.temporal"), tempPass,
+                    I18nUtil.get("recuperar.datos.cambia")));
+
+            // Alert + rellena login padre
+            String successMsg = String.format(I18nUtil.get("recuperar.success"), usuario.getUsername())
+                    .replace("{0}", usuario.getUsername()); 
+            JOptionPane.showMessageDialog(this, successMsg, "¡Recuperado!", JOptionPane.INFORMATION_MESSAGE);
+            if (parent != null) {
                 parent.getTxtUsername().setText(usuario.getUsername());
+                parent.getTxtPassword().setText(tempPass);
                 parent.getTxtPassword().requestFocus();
-
-            } else {
-                lblDatos.setText("<html><center>" + I18nUtil.get("recuperar.notfound.active") + "</center></html>");
-                JOptionPane.showMessageDialog(this, I18nUtil.get("recuperar.error.notfound"),
-                        I18nUtil.get("recuperar.error.notfound"), JOptionPane.WARNING_MESSAGE);
-                txtEmail.selectAll();
-                txtEmail.requestFocus();
             }
 
         } catch (Exception ex) {
-            lblDatos.setText("<html><center>" + I18nUtil.get("recuperar.error.bd") + "</center></html>");
-            JOptionPane.showMessageDialog(this,
-                    I18nUtil.get("recuperar.error.database", ex.getMessage()),
-                    I18nUtil.get("recuperar.error.database"), JOptionPane.ERROR_MESSAGE);
+            String msgError = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName() + " (ver console)";
+            System.err.println("RECUPERAR ERROR: " + msgError);
+            ex.printStackTrace();
+            lblDatos.setText(String.format("<html><center style='color:red;'>%s<br><small>%s</small></center></html>",
+                    I18nUtil.get("recuperar.error.bd"), msgError));
+            JOptionPane.showMessageDialog(this, String.format(I18nUtil.get("recuperar.error.database"), msgError));
         }
     }
 
