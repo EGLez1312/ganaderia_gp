@@ -53,7 +53,6 @@ public class UsuarioDAO {
      * 
      * @param usuario Usuario con contraseña en texto plano
      * (se hashea automáticamente)
-     * @throws HibernateException si error BD/conexión
      * @throws IllegalArgumentException si usuario==null o password vacío
      * @see BCrypt#hashpw(String, String)
      * @see #checkPassword(String, String)

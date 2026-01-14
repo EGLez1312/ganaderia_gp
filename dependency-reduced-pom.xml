@@ -48,6 +48,16 @@
           </compilerArgs>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.6.3</version>
+        <configuration>
+          <failOnError>false</failOnError>
+          <failOnWarnings>false</failOnWarnings>
+          <quiet>true</quiet>
+          <source>21</source>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <properties>

@@ -83,7 +83,6 @@ public class I18nUtil {
      *             (opcional, varargs)
      * @return Texto traducido y formateado, o {@code "???key???" } si no existe
      * @throws MissingResourceException si properties no encontrado
-     * @throws IllegalFormatException si formato inválido en properties
      * @see ResourceBundle#getBundle(String, Locale)
      */
     public static String get(String key, Object... args) {
