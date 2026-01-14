@@ -251,13 +251,22 @@ public class EstadisticasPanel extends JPanel {
     private ChartPanel crearGraficoRazas(List<Oveja> ovejas) {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
-        // Agrupamos por raza y contamos
-        Map<String, Long> conteoRazas = ovejas.stream()
-                .collect(Collectors.groupingBy(Oveja::getRaza, Collectors.counting()));
+        List<Oveja> ovejasActivas = ovejas.stream()
+                .filter(o -> o != null && o.isActivo()) // Null-safe + activas
+                .collect(Collectors.toList());
 
-        conteoRazas.forEach((raza, cantidad) -> {
-            dataset.addValue(cantidad, I18nUtil.get("estadistica.grafico.razas.ovejas"), raza);
-        });
+        // Agrupamos por raza y contamos
+        Map<String, Long> conteoRazas = ovejasActivas.stream()
+                .filter(o -> o.getRaza() != null) 
+                .collect(Collectors.groupingBy(Oveja::getRaza, Collectors.counting()));
+       
+        long sinRaza = ovejasActivas.stream().filter(o -> o.getRaza() == null).count();
+        if (sinRaza > 0) {
+            conteoRazas.put("Sin raza", sinRaza);
+        }
+        
+        conteoRazas.forEach((raza, cantidad)
+                -> dataset.addValue(cantidad, "Cantidad", raza));
 
         JFreeChart chart = ChartFactory.createBarChart(
                 I18nUtil.get("estadistica.grafico.razas.title"),

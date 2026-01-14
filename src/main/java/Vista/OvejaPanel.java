@@ -9,6 +9,7 @@ import DAO.EventoDAO;
 import Modelo.Oveja;
 import Modelo.Usuario;
 import Modelo.Evento;
+import Util.HibernateUtil;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -18,6 +19,10 @@ import java.math.BigDecimal;
 import com.toedter.calendar.JDateChooser;
 import java.time.LocalDate;
 import Util.I18nUtil;
+import java.time.ZoneId;
+import java.util.Date;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 /**
  * Panel CRUD completo para gestión de ovejas.
@@ -416,44 +421,39 @@ public class OvejaPanel extends JPanel{
      */
     private void editarSeleccionada() {
         int fila = tblOveja.getSelectedRow();
-        if (fila != -1) {
-            if (chkMostrarBajas.isSelected()) {
-                btnReincorporar.setEnabled(true);
-            } else {
-                btnReincorporar.setEnabled(false);
-            }
+        if (fila == -1) {
+            return;
+        }
 
-            idSeleccionado = (Integer) model.getValueAt(fila, 0);
-            txtNumero.setText(model.getValueAt(fila, 1).toString());
-            txtPeso.setText(model.getValueAt(fila, 2).toString());
-            txtRaza.setText(model.getValueAt(fila, 3).toString());
+        // UI baja/reincorporar
+        btnReincorporar.setEnabled(chkMostrarBajas.isSelected());
 
-            String sexo = model.getValueAt(fila, 4).toString();
-            cbSexo.setSelectedItem(sexo);
+        // Cargar datos fila → UI
+        idSeleccionado = (Integer) model.getValueAt(fila, 0);
+        txtNumero.setText(model.getValueAt(fila, 1).toString());
+        txtPeso.setText(model.getValueAt(fila, 2).toString());
+        txtRaza.setText(model.getValueAt(fila, 3).toString());
 
-            Object fechaObj = model.getValueAt(fila, 5);
-            if (fechaObj instanceof java.time.LocalDate) {
-                java.time.LocalDate ld = (java.time.LocalDate) fechaObj;
-                // Convertimos LocalDate -> java.util.Date para el JCalendar
-                java.util.Date date = java.util.Date.from(ld.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant());
-                jdFechaNacimiento.setDate(date);
-            } else if (fechaObj != null) {
-                // Si viene como String, intentamos parsearlo
-                try {
-                    java.time.LocalDate ld = java.time.LocalDate.parse(fechaObj.toString());
-                    java.util.Date date = java.util.Date.from(ld.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant());
-                    jdFechaNacimiento.setDate(date);
-                } catch (Exception e) {
-                    System.err.println("Error al parsear fecha en edición: " + e.getMessage());
-                }
-            }
+        String sexo = model.getValueAt(fila, 4).toString();
+        cbSexo.setSelectedItem(sexo);
 
-            if (model.getValueAt(fila, 6) != null) {
-                txtEstadoSalud.setText(model.getValueAt(fila, 6).toString());
-            } else {
-                txtEstadoSalud.setText("");
+        // Fecha: LocalDate → Date (JDateChooser)
+        Object fechaObj = model.getValueAt(fila, 5);
+        if (fechaObj instanceof LocalDate ld) {
+            jdFechaNacimiento.setDate(Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        } else if (fechaObj != null) {
+            try {
+                LocalDate ld = LocalDate.parse(fechaObj.toString());
+                jdFechaNacimiento.setDate(Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+            } catch (Exception e) {
+                System.err.println("Error parse fecha: " + e.getMessage());
             }
         }
+
+        txtEstadoSalud.setText(model.getValueAt(fila, 6) != null
+                ? model.getValueAt(fila, 6).toString() : "");
+
+        System.out.println("EDITAR: Cargada ID=" + idSeleccionado);
     }
 
     /**
@@ -527,38 +527,54 @@ public class OvejaPanel extends JPanel{
             String idHija = numHija.trim().toUpperCase();
             try {
                 if (ovejaDAO.buscarPorNumero(idHija) != null) {
-                    JOptionPane.showMessageDialog(this,
-                            String.format(I18nUtil.get("oveja.parto.duplicate"), idHija));
+                    JOptionPane.showMessageDialog(this, String.format(I18nUtil.get("oveja.parto.duplicate"), idHija));
                     return;
                 }
 
-                // HIJA: copia raza madre (null-safe)
-                Oveja hija = new Oveja();
-                hija.setNumeroIdentificacion(idHija);
-                hija.setRaza(madre.getRaza());  
-                hija.setSexo("H");
-                hija.setPesoActual(new BigDecimal("3.5"));
-                hija.setFechaNacimiento(LocalDate.now());
-                hija.setEstadoSalud("Sana - Recién nacida");
-                hija.setActivo(true);
+                String razaMadre = madre.getRaza() != null ? madre.getRaza() : "Sin raza";
 
-                ovejaDAO.insertar(hija);
-                System.out.println("DEBUG Parto - Hija guardada: " + idHija
-                        + " | Raza: '" + hija.getRaza() + "'");
+                Session session = HibernateUtil.getSessionFactory().openSession();
+                Transaction tx = null;
 
-                // Evento parto MADRE
-                EventoDAO eventoDAO = new EventoDAO();
-                Evento parto = new Evento();
-                parto.setTipoEvento("Parto");
-                parto.setFechaEvento(LocalDate.now());
-                parto.setOveja(madre);
-                parto.setOvejaMadre(madre);  // Madre misma
-                eventoDAO.insertar(parto);
+                try {
+                    tx = session.beginTransaction();
+
+                    // HIJA: copia raza madre (null-safe)
+                    Oveja hija = new Oveja();
+                    hija.setNumeroIdentificacion(idHija);
+                    hija.setRaza(razaMadre);
+                    hija.setSexo("H");
+                    hija.setPesoActual(new BigDecimal("3.5"));
+                    hija.setFechaNacimiento(LocalDate.now());
+                    hija.setEstadoSalud("Sana - Recién nacida");
+                    hija.setActivo(true);
+
+                    ovejaDAO.insertar(hija);
+                    System.out.println("DEBUG Parto - Hija guardada: " + idHija
+                            + " | Raza: '" + hija.getRaza() + "'");
+
+                    // Evento parto MADRE
+                    EventoDAO eventoDAO = new EventoDAO();
+                    Evento parto = new Evento();
+                    parto.setTipoEvento("Parto");
+                    parto.setFechaEvento(LocalDate.now());
+                    parto.setOveja(madre);
+                    parto.setOvejaMadre(madre);  // Madre misma
+                    session.persist(parto);
+
+                    tx.commit();
+
+                    System.out.println("PARTO OK: Hija ID=" + hija.getId() + " Evento OK");
+
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, I18nUtil.get("oveja.error.parto") + ": " + ex.getMessage());
+                    ex.printStackTrace();
+                    return;
+                }
 
                 cargarOvejas();
-                JOptionPane.showMessageDialog(this,
-                        String.format(I18nUtil.get("oveja.parto.success"),
-                                madre.getNumeroIdentificacion(), idHija, hija.getId()));
+                JOptionPane.showMessageDialog(this, String.format(I18nUtil.get("oveja.parto.success"),
+                        madre.getNumeroIdentificacion(), idHija, "nuevo"));
 
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, I18nUtil.get("oveja.error.parto") + ": " + ex.getMessage());
